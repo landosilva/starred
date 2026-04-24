@@ -7,7 +7,7 @@
 
 **A compact favorites tray plus selection history for the Unity Editor.**
 
-[![Unity 6.0+](https://img.shields.io/badge/Unity-6000.0%2B-000?logo=unity)](https://unity.com/releases/editor/whats-new/6000.0)
+[![Unity 2022.3+](https://img.shields.io/badge/Unity-2022.3%2B-000?logo=unity)](https://unity.com/releases/editor/qa/lts-releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE.md)
 [![Release](https://img.shields.io/github/v/tag/landosilva/starred?label=release&color=gold)](https://github.com/landosilva/starred/releases)
 [![Kynesis](https://img.shields.io/badge/Kynesis-★-black)](https://github.com/landosilva)
@@ -33,7 +33,6 @@ You already know the loop: hunt the Project window for that one prefab, lose it 
 - [Preferences](#preferences)
 - [Where your data lives](#where-your-data-lives)
 - [Compatibility](#compatibility)
-- [Roadmap](#roadmap)
 - [License](#license)
 
 ## Install
@@ -56,7 +55,7 @@ https://github.com/landosilva/starred.git#v0.1.0
 
 Clone the repo and pick **Add package from disk…**, pointing at the package's `package.json`.
 
-Requires Unity **6000.0** or newer.
+Requires Unity **2022.3 LTS** or newer.
 
 ## Favorites
 
@@ -156,17 +155,10 @@ Nothing lives inside `Assets/`, so nothing ends up in version control by acciden
 | Unity | Status |
 | --- | --- |
 | 6000.0 LTS | ✅ Tested |
-| 2023.x | ⚠️ Untested — may work |
-| 2022.x and older | ❌ Not supported |
+| 2022.3 LTS | ✅ Tested |
+| Older | ❌ Not supported |
 
 Editor-only. No runtime footprint, no scripting define symbols, no dependencies beyond the Unity Editor.
-
-## Roadmap
-
-- Opt-in per-favorite global shortcut — right-click a row, assign a key, ping that asset from anywhere in the editor.
-- Unity Asset Store release.
-
-Starred is intentionally small. Folders, workspaces, tabs and an embedded inspector have been considered and deliberately left out — the whole point is a compact flat tray, not a second Project window.
 
 ## License
 

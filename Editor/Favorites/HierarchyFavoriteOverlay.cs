@@ -9,19 +9,31 @@ namespace Kynesis.Starred.Editor
         static HierarchyFavoriteOverlay()
         {
             // Domain reload re-runs this ctor; guard against double-registration.
+#if UNITY_6000_0_OR_NEWER
             EditorApplication.hierarchyWindowItemByEntityIdOnGUI -= OnItemGUI;
             EditorApplication.hierarchyWindowItemByEntityIdOnGUI += OnItemGUI;
+#else
+            EditorApplication.hierarchyWindowItemOnGUI -= OnItemGUI;
+            EditorApplication.hierarchyWindowItemOnGUI += OnItemGUI;
+#endif
 
             FavoriteAssetsPreferences.Changed -= EditorApplication.RepaintHierarchyWindow;
             FavoriteAssetsPreferences.Changed += EditorApplication.RepaintHierarchyWindow;
         }
 
+#if UNITY_6000_0_OR_NEWER
         private static void OnItemGUI(EntityId entityId, Rect selectionRect)
         {
+            var obj = EditorUtility.EntityIdToObject(entityId);
+#else
+        private static void OnItemGUI(int instanceId, Rect selectionRect)
+        {
+            var obj = EditorUtility.InstanceIDToObject(instanceId);
+#endif
             if (!FavoriteAssetsSettings.ShowHierarchyStar) return;
             if (!FavoriteAssetsPreferences.HasAnySceneObject) return;
 
-            if (EditorUtility.EntityIdToObject(entityId) is not GameObject go) return;
+            if (obj is not GameObject go) return;
 
             var scenePath = SceneObjectResolver.GetScenePath(go);
             if (string.IsNullOrEmpty(scenePath)) return;

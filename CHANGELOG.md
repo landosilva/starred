@@ -5,6 +5,17 @@ All notable changes to this package are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.1] - 2026-04-24
+
+### Added
+
+- Unity **2022.3 LTS** compatibility. The Hierarchy star overlay now compiles against both the legacy `hierarchyWindowItemOnGUI` / `InstanceIDToObject` API (2022.3) and the new `hierarchyWindowItemByEntityIdOnGUI` / `EntityIdToObject` API (Unity 6) via a `UNITY_6000_0_OR_NEWER` switch.
+
+### Changed
+
+- `package.json` minimum Unity version lowered from `6000.0` to `2022.3`.
+- README polish: restructured for launch with banner, badges, per-feature sections and image slots under `Documentation~/Images/`.
+
 ## [0.1.0] - 2026-04-24
 
 ### Added
