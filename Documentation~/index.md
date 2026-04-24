@@ -68,7 +68,7 @@ Both overlays are independently toggleable in Preferences.
 
 ## Preferences
 
-`Edit → Preferences → Favorites & History`
+**Unity → Settings → Starred** (macOS, Unity 6) — or **Edit → Preferences → Starred** (Windows, Unity 2022).
 
 - **Show star in Project window** — toggle the Project ★ overlay.
 - **Show star in Hierarchy** — toggle the Hierarchy ★ overlay.

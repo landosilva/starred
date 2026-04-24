@@ -39,6 +39,8 @@ namespace Kynesis.Starred.Editor
         {
             FavoriteAssetsPreferences.Changed += Rebuild;
             Selection.selectionChanged        += ApplyCurrentHighlight;
+            AssetChangeNotifier.Changed       += Rebuild;
+            EditorApplication.hierarchyChanged += Rebuild;
 
             EditorSceneManager.sceneOpened           += OnSceneOpened;
             EditorSceneManager.sceneClosed           += OnSceneClosed;
@@ -51,6 +53,8 @@ namespace Kynesis.Starred.Editor
         {
             FavoriteAssetsPreferences.Changed -= Rebuild;
             Selection.selectionChanged        -= ApplyCurrentHighlight;
+            AssetChangeNotifier.Changed       -= Rebuild;
+            EditorApplication.hierarchyChanged -= Rebuild;
 
             EditorSceneManager.sceneOpened           -= OnSceneOpened;
             EditorSceneManager.sceneClosed           -= OnSceneClosed;

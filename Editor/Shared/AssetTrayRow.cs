@@ -48,7 +48,9 @@ namespace Kynesis.Starred.Editor
             var icon = asset != null
                 ? AssetDatabase.GetCachedIcon(path)
                 : EditorGUIUtility.IconContent("console.warnicon.sml").image;
-            var labelText = asset != null ? asset.name : "(missing asset)";
+            var labelText = asset != null
+                ? asset.name
+                : string.IsNullOrEmpty(path) ? "(unknown asset)" : "(deleted)";
             var tooltip   = string.IsNullOrEmpty(path) ? $"Unknown GUID: {guid}" : path;
 
             return CreateShell(userData ?? guid, icon, labelText, tooltip, asset == null);

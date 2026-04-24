@@ -23,13 +23,14 @@ namespace Kynesis.Starred.Editor
 
 #if UNITY_6000_0_OR_NEWER
         private static void OnItemGUI(EntityId entityId, Rect selectionRect)
-        {
-            var obj = EditorUtility.EntityIdToObject(entityId);
+            => DrawOverlay(EditorUtility.EntityIdToObject(entityId), selectionRect);
 #else
         private static void OnItemGUI(int instanceId, Rect selectionRect)
-        {
-            var obj = EditorUtility.InstanceIDToObject(instanceId);
+            => DrawOverlay(EditorUtility.InstanceIDToObject(instanceId), selectionRect);
 #endif
+
+        private static void DrawOverlay(UnityEngine.Object obj, Rect selectionRect)
+        {
             if (!FavoriteAssetsSettings.ShowHierarchyStar) return;
             if (!FavoriteAssetsPreferences.HasAnySceneObject) return;
 

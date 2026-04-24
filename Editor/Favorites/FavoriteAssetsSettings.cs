@@ -7,7 +7,7 @@ namespace Kynesis.Starred.Editor
 
     internal static class FavoriteAssetsSettings
     {
-        public const string SettingsPath = "Preferences/Favorites & History";
+        public const string SettingsPath = "Preferences/Starred";
 
         private const string ShowProjectWindowStarKey = "FavoriteAssets.ShowProjectWindowStar";
         private const string ShowHierarchyStarKey     = "FavoriteAssets.ShowHierarchyStar";
@@ -52,7 +52,7 @@ namespace Kynesis.Starred.Editor
             }
         }
 
-        private static readonly int[] MaxHistoryChoices = { 4, 8, 16, 32 };
+        public static readonly int[] MaxHistoryEntriesChoices = { 4, 8, 16, 32 };
         private static readonly GUIContent[] MaxHistoryLabels =
         {
             new("4"), new("8"), new("16"), new("32"),
@@ -63,34 +63,71 @@ namespace Kynesis.Starred.Editor
         {
             return new SettingsProvider(SettingsPath, SettingsScope.User)
             {
-                label = "Favorites & History",
-                keywords = new HashSet<string> { "favorite", "favorites", "star", "project", "history", "selection" },
+                label = "Starred",
+                keywords = new HashSet<string> { "starred", "favorite", "favorites", "star", "project", "history", "selection" },
                 guiHandler = _ => OnGUI(),
             };
         }
 
         private static void OnGUI()
         {
-            // IMGUI inside a SettingsProvider picks up the native Preferences
-            // look — label column on the left, controls aligned on the right.
-            ShowProjectWindowStar = EditorGUILayout.Toggle(
-                new GUIContent("Show star in Project window",
-                    "Draws a small gold star on favorited assets in the Project window. Click the star to remove the favorite."),
-                ShowProjectWindowStar);
+            var previousLabelWidth = EditorGUIUtility.labelWidth;
+            EditorGUIUtility.labelWidth = 250f;
+            try
+            {
+                DrawSectionHeader("Favorites", "Tools → Starred → Favorites");
+                using (new EditorGUI.IndentLevelScope())
+                {
+                    ShowProjectWindowStar = EditorGUILayout.Toggle(
+                        new GUIContent("Show star in Project window",
+                            "Draws a small gold star on favorited assets in the Project window. Click the star to remove the favorite."),
+                        ShowProjectWindowStar);
 
-            ShowHierarchyStar = EditorGUILayout.Toggle(
-                new GUIContent("Show star in Hierarchy",
-                    "Draws a small gold star on favorited GameObjects in the Hierarchy. Click the star to remove the favorite."),
-                ShowHierarchyStar);
+                    ShowHierarchyStar = EditorGUILayout.Toggle(
+                        new GUIContent("Show star in Hierarchy",
+                            "Draws a small gold star on favorited GameObjects in the Hierarchy. Click the star to remove the favorite."),
+                        ShowHierarchyStar);
+                }
 
-            EditorGUILayout.Space();
+                EditorGUILayout.Space(6f);
 
-            MaxHistoryEntries = EditorGUILayout.IntPopup(
-                new GUIContent("Selection history max entries",
-                    "Maximum number of recent selections the Selection History window remembers."),
-                MaxHistoryEntries,
-                MaxHistoryLabels,
-                MaxHistoryChoices);
+                DrawSectionHeader("History", "Tools → Starred → History");
+                using (new EditorGUI.IndentLevelScope())
+                {
+                    MaxHistoryEntries = EditorGUILayout.IntPopup(
+                        new GUIContent("Selection history max entries",
+                            "Maximum number of recent selections the Selection History window remembers."),
+                        MaxHistoryEntries,
+                        MaxHistoryLabels,
+                        MaxHistoryEntriesChoices);
+                }
+            }
+            finally
+            {
+                EditorGUIUtility.labelWidth = previousLabelWidth;
+            }
+        }
+
+        private static GUIStyle _pathStyle;
+
+        private static GUIStyle PathStyle
+        {
+            get
+            {
+                if (_pathStyle != null) return _pathStyle;
+                _pathStyle = new GUIStyle(EditorStyles.miniLabel)
+                {
+                    fontStyle = FontStyle.Italic,
+                    wordWrap = false,
+                };
+                return _pathStyle;
+            }
+        }
+
+        private static void DrawSectionHeader(string title, string menuPath)
+        {
+            EditorGUILayout.LabelField(title, EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(menuPath, PathStyle);
         }
     }
 }

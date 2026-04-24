@@ -23,6 +23,10 @@
 
 You already know the loop: hunt the Project window for that one prefab, lose it again ten minutes later, `Ctrl+Shift+F` your way back. Starred is a two-window fix — pin what you reach for, and scroll back through what you just had selected. No folders, no workspaces, no second Project window — just a flat tray and a short memory.
 
+## Design philosophy
+
+Starred is intentionally small. Folders, workspaces, tabs, nested groups and embedded inspectors have all been considered and deliberately left out — the point is a compact, actionable tray, not a second Project window. If you need hierarchy, you already have one.
+
 ## Contents
 
 - [Install](#install)
@@ -48,7 +52,7 @@ https://github.com/landosilva/starred.git
 **Pin to a release:**
 
 ```
-https://github.com/landosilva/starred.git#v0.1.0
+https://github.com/landosilva/starred.git#v0.1.2
 ```
 
 **Local clone:**
@@ -125,7 +129,7 @@ Every row in both windows has a full context menu:
 
 ## Preferences
 
-`Edit → Preferences → Favorites & History`
+**Unity → Settings → Starred** (macOS, Unity 6) — or **Edit → Preferences → Starred** (Windows, Unity 2022).
 
 <div align="center">
 
@@ -162,4 +166,4 @@ Editor-only. No runtime footprint, no scripting define symbols, no dependencies 
 
 ## License
 
-[MIT](LICENSE.md).
+Released under the [MIT License](LICENSE.md) — free to use, modify and distribute, including commercially.

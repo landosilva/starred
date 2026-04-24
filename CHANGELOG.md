@@ -5,6 +5,22 @@ All notable changes to this package are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.2] - 2026-04-24
+
+### Fixed
+
+- Favorites and Selection History rows now turn red **immediately** when their target disappears:
+  - Deleted, moved or renamed project assets — via a new `AssetChangeNotifier` (`AssetPostprocessor`) that fires after the AssetDatabase has settled.
+  - Scene GameObjects deleted or renamed in an **unsaved** scene — via `EditorApplication.hierarchyChanged`.
+- Missing-asset labels now differentiate between `(deleted)` (path known, file removed) and `(unknown asset)` (GUID does not resolve).
+
+### Changed
+
+- **Preferences pane** renamed from *Favorites & History* to **Starred**, now split into bold **Favorites** and **History** sections with the relevant `Tools → Starred → …` menu path shown under each. Label column widened so labels no longer truncate.
+- README: new *Design philosophy* section, fuller License blurb, menu paths updated for Unity 6 (macOS `Unity → Settings`) and Unity 2022 (`Edit → Preferences`).
+- `HierarchyFavoriteOverlay` internals collapsed — the Unity 6 / 2022.3 API split now wraps a single shared draw method instead of duplicating the body inside `#if`.
+- Selection-history size choices (`4 / 8 / 16 / 32`) are now exposed once from `FavoriteAssetsSettings` and reused by `SelectionHistoryWindow`.
+
 ## [0.1.1] - 2026-04-24
 
 ### Added

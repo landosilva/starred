@@ -12,8 +12,6 @@ namespace Kynesis.Starred.Editor
     /// </summary>
     public class SelectionHistoryWindow : EditorWindow, IHasCustomMenu
     {
-        private static readonly int[] MaxEntriesChoices = { 4, 8, 16, 32 };
-
         private VisualElement _list;
         private Label _emptyState;
 
@@ -31,6 +29,8 @@ namespace Kynesis.Starred.Editor
             SelectionHistoryPreferences.Changed += Rebuild;
             FavoriteAssetsPreferences.Changed   += Rebuild;
             Selection.selectionChanged          += ApplyCurrentHighlight;
+            AssetChangeNotifier.Changed         += Rebuild;
+            EditorApplication.hierarchyChanged  += Rebuild;
 
             EditorSceneManager.sceneOpened                  += OnSceneOpened;
             EditorSceneManager.sceneClosed                  += OnSceneClosed;
@@ -44,6 +44,8 @@ namespace Kynesis.Starred.Editor
             SelectionHistoryPreferences.Changed -= Rebuild;
             FavoriteAssetsPreferences.Changed   -= Rebuild;
             Selection.selectionChanged          -= ApplyCurrentHighlight;
+            AssetChangeNotifier.Changed         -= Rebuild;
+            EditorApplication.hierarchyChanged  -= Rebuild;
 
             EditorSceneManager.sceneOpened                  -= OnSceneOpened;
             EditorSceneManager.sceneClosed                  -= OnSceneClosed;
@@ -55,7 +57,7 @@ namespace Kynesis.Starred.Editor
         public void AddItemsToMenu(GenericMenu menu)
         {
             var currentMax = FavoriteAssetsSettings.MaxHistoryEntries;
-            foreach (var choice in MaxEntriesChoices)
+            foreach (var choice in FavoriteAssetsSettings.MaxHistoryEntriesChoices)
             {
                 var capturedChoice = choice;
                 menu.AddItem(new GUIContent($"Max entries/{choice}"), currentMax == choice,
