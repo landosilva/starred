@@ -133,3 +133,81 @@
     border-radius: 1px;
 }
 
+.assettray-insert-marker--forbidden {
+    background-color: rgb(210, 90, 80);
+}
+
+.assettray-drag-ghost {
+    position: absolute;
+    flex-direction: row;
+    align-items: center;
+    background-color: rgba(40, 40, 48, 0.9);
+    border-color: rgba(120, 140, 170, 0.6);
+    border-left-width: 1px;
+    border-right-width: 1px;
+    border-top-width: 1px;
+    border-bottom-width: 1px;
+    border-radius: 3px;
+    padding-left: 4px;
+    padding-right: 6px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+    opacity: 0.92;
+}
+
+.assettray-drag-ghost-icon {
+    width: 14px;
+    height: 14px;
+    margin-right: 4px;
+}
+
+.assettray-drag-ghost-label {
+    color: rgb(230, 230, 235);
+    font-size: 11px;
+}
+
+.assettray-row-context-icon {
+    opacity: 0.7;
+}
+
+.assettray-row-context-label {
+    color: rgba(180, 180, 190, 0.7);
+    font-size: 10px;
+    margin-right: 2px;
+    -unity-font-style: italic;
+}
+
+.assettray-row-context-separator {
+    color: rgba(140, 140, 150, 0.7);
+    font-size: 11px;
+    margin-left: 2px;
+    margin-right: 4px;
+}
+
+.assettray-separator {
+    height: 1px;
+    background-color: rgba(255, 255, 255, 0.08);
+    margin-left: 8px;
+    margin-right: 8px;
+    margin-top: 4px;
+    margin-bottom: 4px;
+}
+
+.assettray-forbidden-overlay {
+    background-color: rgba(28, 32, 40, 0.92);
+    border-color: rgba(110, 140, 180, 0.5);
+    border-left-width: 1px;
+    border-right-width: 1px;
+    border-top-width: 1px;
+    border-bottom-width: 1px;
+    border-radius: 3px;
+    align-items: center;
+    justify-content: center;
+}
+
+.assettray-forbidden-overlay-label {
+    color: rgba(200, 215, 230, 0.5);
+    font-size: 11px;
+    -unity-font-style: italic;
+}
+

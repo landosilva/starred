@@ -20,11 +20,25 @@ namespace Kynesis.Starred.Editor
         private VisualElement _listContainer;
         private Label _emptyState;
         private VisualElement _insertMarker;
+        private VisualElement _forbiddenOverlay;
+        private Label _forbiddenOverlayLabel;
+        private VisualElement _dragGhost;
+        private Image _dragGhostIcon;
+        private Label _dragGhostLabel;
 
         private FavoriteEntry _pressedEntry;
+        private VisualElement _pressedRow;
+        private System.Action _pressedStartDragOut;
+        private Object _pressedSelectTarget;
         private Vector2 _mouseDownPos;
         private bool _reordering;
+        private bool _dropForbidden;
         private int _dropIndex = -1;
+
+        // Set when the user drags one of our own rows past the window edge.
+        // If the native drag re-enters the window we resume reorder mode on it
+        // instead of treating the drop as a duplicate "add".
+        private FavoriteEntry _draggingOwnEntry;
 
         [MenuItem("Tools/Starred/Favorites")]
         public static void Open()
@@ -108,6 +122,16 @@ namespace Kynesis.Starred.Editor
             _listContainer = rootVisualElement.Q<VisualElement>("root");
             _emptyState    = rootVisualElement.Q<Label>("empty-state");
 
+            _forbiddenOverlay = new VisualElement();
+            _forbiddenOverlay.AddToClassList("assettray-forbidden-overlay");
+            _forbiddenOverlay.style.position = Position.Absolute;
+            _forbiddenOverlay.style.display = DisplayStyle.None;
+            _forbiddenOverlay.pickingMode = PickingMode.Ignore;
+            _forbiddenOverlayLabel = new Label();
+            _forbiddenOverlayLabel.AddToClassList("assettray-forbidden-overlay-label");
+            _forbiddenOverlay.Add(_forbiddenOverlayLabel);
+            _list.Add(_forbiddenOverlay);
+
             _insertMarker = new VisualElement();
             _insertMarker.AddToClassList("assettray-insert-marker");
             _insertMarker.style.position = Position.Absolute;
@@ -115,19 +139,213 @@ namespace Kynesis.Starred.Editor
             _insertMarker.pickingMode = PickingMode.Ignore;
             _list.Add(_insertMarker);
 
+            _dragGhost = new VisualElement();
+            _dragGhost.AddToClassList("assettray-drag-ghost");
+            _dragGhost.style.display = DisplayStyle.None;
+            _dragGhost.pickingMode = PickingMode.Ignore;
+            _dragGhostIcon = new Image { scaleMode = ScaleMode.ScaleToFit };
+            _dragGhostIcon.AddToClassList("assettray-drag-ghost-icon");
+            _dragGhost.Add(_dragGhostIcon);
+            _dragGhostLabel = new Label();
+            _dragGhostLabel.AddToClassList("assettray-drag-ghost-label");
+            _dragGhost.Add(_dragGhostLabel);
+            rootVisualElement.Add(_dragGhost);
+
             RegisterDropZone(rootVisualElement);
             RegisterImguiDropFallback();
+            RegisterRootDragHandlers();
             Rebuild();
         }
 
+        // Pointer capture on a nested row silently fails during Unity's focus
+        // transition, so a click on an unfocused window never starts a drag.
+        // We bypass that by handling move / up / leave at the window root —
+        // those events fire regardless of capture state — and just remember
+        // which row was pressed.
+        private void RegisterRootDragHandlers()
+        {
+            rootVisualElement.pickingMode = PickingMode.Position;
+            rootVisualElement.focusable = true;
+
+            // Detect the press at the root in TrickleDown so the first click on
+            // an unfocused window is handled even if UITK drops the row-level
+            // event during the focus transition. Same reason Unity's IMGUI
+            // windows (Project, Hierarchy) work on first click.
+            rootVisualElement.RegisterCallback<PointerDownEvent>(OnRootPointerDown, TrickleDown.TrickleDown);
+            rootVisualElement.RegisterCallback<PointerMoveEvent>(OnRootPointerMove);
+            // PointerUp in TrickleDown so child buttons calling StopPropagation
+            // can't leave the window with stale _pressedEntry.
+            rootVisualElement.RegisterCallback<PointerUpEvent>(OnRootPointerUp, TrickleDown.TrickleDown);
+            rootVisualElement.RegisterCallback<MouseLeaveEvent>(OnRootMouseLeave);
+        }
+
+        private void OnRootPointerDown(PointerDownEvent evt)
+        {
+            if (focusedWindow != this) Focus();
+
+            if (evt.button != 0) return;
+            if (evt.target is Button) return;
+
+            var row = FindRowAncestor(evt.target as VisualElement);
+            if (row?.userData is not FavoriteEntry entry) return;
+
+            var binding = BindFor(entry);
+            if (binding == null) return;
+
+            if (evt.clickCount == 2)
+            {
+                binding.OnDoubleClick();
+                evt.StopPropagation();
+                return;
+            }
+
+            _pressedEntry = entry;
+            _pressedRow = row;
+            _pressedStartDragOut = binding.OnStartDragOut;
+            _pressedSelectTarget = binding.SelectTarget;
+            _mouseDownPos = evt.position;
+        }
+
+        private sealed class RowBinding
+        {
+            public Object SelectTarget;
+            public System.Action OnDoubleClick;
+            public System.Action OnStartDragOut;
+        }
+
+        private static RowBinding BindFor(FavoriteEntry entry)
+        {
+            if (entry.IsAsset)
+            {
+                var path = AssetDatabase.GUIDToAssetPath(entry.Guid);
+                var asset = string.IsNullOrEmpty(path) ? null : AssetDatabase.LoadMainAssetAtPath(path);
+                if (asset == null) return null;
+                return new RowBinding
+                {
+                    SelectTarget = asset,
+                    OnDoubleClick = () => AssetDatabase.OpenAsset(asset),
+                    OnStartDragOut = () => AssetTrayRow.StartDragOutAsset(asset),
+                };
+            }
+
+            if (entry.IsSceneObject)
+            {
+                var go = SceneObjectResolver.Find(entry.ScenePath, entry.HierarchyPath);
+                if (go == null) return null;
+                return new RowBinding
+                {
+                    SelectTarget = go,
+                    OnDoubleClick = () => { Selection.activeGameObject = go; SceneView.FrameLastActiveSceneView(); },
+                    // Contextual favorites only support reorder — there's no
+                    // meaningful "instantiate" for an existing scene object.
+                    OnStartDragOut = null,
+                };
+            }
+
+            return null;
+        }
+
+        private static VisualElement FindRowAncestor(VisualElement element)
+        {
+            while (element != null && element.userData is not FavoriteEntry)
+                element = element.parent;
+            return element;
+        }
+
+        private void OnRootPointerMove(PointerMoveEvent evt)
+        {
+            if (_pressedEntry == null) return;
+
+            // Stale press detection. The left-button bit is clear whenever the
+            // mouse isn't physically held — that means we missed a release
+            // somewhere (synthetic PointerUp skipped, focus bounce, etc.) and
+            // any ongoing move would otherwise be misread as reorder.
+            if ((evt.pressedButtons & 1) == 0)
+            {
+                EndPress(_pressedRow);
+                return;
+            }
+
+            // External DragAndDrop in flight — DragEnter usually already
+            // cleared press state, but event ordering across Unity versions
+            // isn't strict, so guard here too.
+            if (_draggingOwnEntry == null && HasAnySupportedItemInDrag())
+            {
+                EndPress(_pressedRow);
+                return;
+            }
+
+            var pos = (Vector2)evt.position;
+            if ((pos - _mouseDownPos).sqrMagnitude < DragStartDistance * DragStartDistance) return;
+
+            // Cursor is still inside the window — reorder mode.
+            if (!_reordering && _pressedRow != null) BeginReorder(_pressedRow);
+            UpdateDropIndex(pos);
+        }
+
+        private void OnRootMouseLeave(MouseLeaveEvent evt)
+        {
+            if (_pressedEntry == null) return;
+            if ((evt.mousePosition - _mouseDownPos).sqrMagnitude < DragStartDistance * DragStartDistance) return;
+
+            if (_pressedStartDragOut == null)
+            {
+                // Contextual entry dragged outside — nothing to instantiate.
+                // Cancel the gesture so state doesn't leak.
+                EndPress(_pressedRow);
+                return;
+            }
+
+            // Hand off to a native DragAndDrop. Remember the entry so a re-entry
+            // resumes reorder rather than adding a duplicate.
+            _draggingOwnEntry = _pressedEntry;
+            var startDragOut = _pressedStartDragOut;
+            var overlayEntry = _pressedEntry;
+            EndPress(_pressedRow);
+            startDragOut();
+            // Keep the forbidden overlay visible through the drag-out so the
+            // user sees the constraint the moment they come back.
+            ShowForbiddenOverlay(overlayEntry);
+        }
+
+        private void OnRootPointerUp(PointerUpEvent evt)
+        {
+            if (_pressedEntry == null) return;
+            // Synthetic PointerUp from the focus transition still reports the
+            // left-button bit as pressed — a real release on left reports
+            // pressedButtons = 0 for that bit. Ignore the synthetic one.
+            if ((evt.pressedButtons & 1) != 0) return;
+            if (evt.button != 0) return;
+
+            // Only act if the pressed row is still live — Rebuild mid-drag may
+            // have destroyed it, in which case we just clear state.
+            var rowIsLive = _pressedRow != null && _pressedRow.parent == _list;
+            if (rowIsLive && _reordering && _dropIndex >= 0 && !_dropForbidden)
+            {
+                var fromIndex = FindEntryIndex(_pressedEntry);
+                if (fromIndex >= 0) FavoriteAssetsPreferences.Move(fromIndex, _dropIndex);
+            }
+            else if (!_reordering && _pressedSelectTarget != null)
+            {
+                // Release without drag — this is a plain click. Select now
+                // rather than on press, so Selection.selectionChanged doesn't
+                // repaint and break the event stream mid-gesture.
+                Selection.activeObject = _pressedSelectTarget;
+            }
+            EndPress(_pressedRow);
+        }
+
         /// <summary>
-        /// UITK DragEvents can be inconsistent for Hierarchy drags across Unity
-        /// versions. This IMGUI container sits invisibly behind the window and
-        /// catches the legacy DragAndDrop events as a safety net.
+        /// An invisible IMGUIContainer sits behind the UITK tree as an
+        /// event-level safety net. IMGUI reliably receives input on unfocused
+        /// EditorWindows (that's how Unity's own Project / Hierarchy windows
+        /// let you click-and-drag without a prior focus click), so we use it
+        /// for the initial press and for external drag-and-drop payloads that
+        /// UITK's DragEvents don't always deliver.
         /// </summary>
         private void RegisterImguiDropFallback()
         {
-            var fallback = new IMGUIContainer(OnImguiDrop);
+            var fallback = new IMGUIContainer(OnImguiEvents);
             fallback.style.position = Position.Absolute;
             fallback.style.left     = 0;
             fallback.style.right    = 0;
@@ -137,11 +355,61 @@ namespace Kynesis.Starred.Editor
             rootVisualElement.Insert(0, fallback);
         }
 
-        private void OnImguiDrop()
+        private void OnImguiEvents()
         {
             var evt = Event.current;
-            if (evt.type != EventType.DragUpdated && evt.type != EventType.DragPerform) return;
+            if (evt == null) return;
+
+            switch (evt.type)
+            {
+                case EventType.MouseDown when evt.button == 0:
+                    HandleImguiPress(evt);
+                    break;
+                case EventType.DragUpdated:
+                case EventType.DragPerform:
+                    HandleImguiDrop(evt);
+                    break;
+            }
+        }
+
+        private void HandleImguiPress(Event evt)
+        {
+            // If UITK already delivered a PointerDown for this click, skip —
+            // this IMGUI path is a fallback for the unfocused-window case.
+            if (_pressedEntry != null) return;
+            if (focusedWindow != this) Focus();
+
+            var target = rootVisualElement.panel?.Pick(evt.mousePosition);
+            if (target is Button) return;
+
+            var row = FindRowAncestor(target);
+            if (row?.userData is not FavoriteEntry entry) return;
+
+            var binding = BindFor(entry);
+            if (binding == null) return;
+
+            if (evt.clickCount == 2)
+            {
+                binding.OnDoubleClick();
+                return;
+            }
+
+            _pressedEntry = entry;
+            _pressedRow = row;
+            _pressedStartDragOut = binding.OnStartDragOut;
+            _pressedSelectTarget = binding.SelectTarget;
+            _mouseDownPos = evt.mousePosition;
+        }
+
+        private void HandleImguiDrop(Event evt)
+        {
             if (!HasAnySupportedItemInDrag()) return;
+
+            // External drag is in-flight — scrub any lingering press so a stale
+            // _pressedEntry can't be misread as reorder in a concurrent
+            // PointerMove.
+            if (_pressedEntry != null && _draggingOwnEntry == null)
+                EndPress(_pressedRow);
 
             DragAndDrop.visualMode = DragAndDropVisualMode.Copy;
 
@@ -157,12 +425,18 @@ namespace Kynesis.Starred.Editor
 
         private void Rebuild()
         {
+            // Rows are about to be destroyed — any in-flight reorder whose
+            // MouseUp hasn't fired would otherwise leak state (press, cursor,
+            // insert marker) onto the freshly rebuilt rows.
+            ResetDragState();
+
             if (_list == null) return;
             _list.Clear();
 
             // Contextual (scene / prefab-stage) favorites float to the top so
             // they're visible while you're editing them. Asset favorites follow.
             var renderedCount = 0;
+            var sceneCount = 0;
             foreach (var entry in FavoriteAssetsPreferences.Entries)
             {
                 if (!entry.IsSceneObject) continue;
@@ -170,8 +444,10 @@ namespace Kynesis.Starred.Editor
                 if (row == null) continue;
                 _list.Add(row);
                 renderedCount++;
+                sceneCount++;
             }
 
+            var assetCount = 0;
             foreach (var entry in FavoriteAssetsPreferences.Entries)
             {
                 if (!entry.IsAsset) continue;
@@ -179,10 +455,24 @@ namespace Kynesis.Starred.Editor
                 if (row == null) continue;
                 _list.Add(row);
                 renderedCount++;
+                assetCount++;
+            }
+
+            // Visible separator between the two blocks so the "contextual on
+            // top, assets below" rule is obvious even outside a reorder.
+            if (sceneCount > 0 && assetCount > 0)
+            {
+                var separator = new VisualElement();
+                separator.AddToClassList("assettray-separator");
+                separator.pickingMode = PickingMode.Ignore;
+                _list.Insert(sceneCount, separator);
             }
 
             _emptyState.style.display = renderedCount == 0 ? DisplayStyle.Flex : DisplayStyle.None;
 
+            // Re-attach overlay + marker that were cleared with the list.
+            _list.Add(_forbiddenOverlay);
+            _forbiddenOverlay.style.display = DisplayStyle.None;
             _list.Add(_insertMarker);
             _insertMarker.style.display = DisplayStyle.None;
 
@@ -197,7 +487,6 @@ namespace Kynesis.Starred.Editor
             {
                 row.Add(AssetTrayRow.CreatePingButton(asset));
                 row.Add(CreateRemoveButton(entry));
-                WireAssetDrag(row, entry, asset);
                 row.AddManipulator(new ContextualMenuManipulator(evt =>
                 {
                     AssetTrayRow.AppendAssetContextMenu(evt.menu, asset, entry.Guid, path);
@@ -221,7 +510,6 @@ namespace Kynesis.Starred.Editor
                     Selection.activeGameObject = go;
                 }));
                 row.Add(CreateRemoveButton(entry));
-                WireSceneObjectDrag(row, entry, go);
                 row.AddManipulator(new ContextualMenuManipulator(evt =>
                 {
                     evt.menu.AppendAction("Show in Hierarchy", _ =>
@@ -260,78 +548,21 @@ namespace Kynesis.Starred.Editor
             return btn;
         }
 
-        // ---------- Drag from rows ----------
+        // UITK's Cursor.defaultCursorId is internal, so we poke it via reflection
+        // to let USS-style code request a built-in Editor cursor by enum.
+        private static System.Reflection.FieldInfo _defaultCursorIdField;
 
-        private void WireAssetDrag(VisualElement row, FavoriteEntry entry, Object asset)
+        private static StyleCursor BuildCursor(MouseCursor cursor)
         {
-            WireDragBehaviour(row, entry, asset,
-                onDoubleClick:  () => AssetDatabase.OpenAsset(asset),
-                onStartDragOut: () => StartDragOutAsset(asset));
-        }
+            var cursorType = typeof(UnityEngine.UIElements.Cursor);
+            _defaultCursorIdField ??= cursorType.GetField("m_DefaultCursorId",
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+                ?? cursorType.GetField("defaultCursorId",
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
 
-        private void WireSceneObjectDrag(VisualElement row, FavoriteEntry entry, GameObject go)
-        {
-            WireDragBehaviour(row, entry, go,
-                onDoubleClick:  () => { Selection.activeGameObject = go; SceneView.FrameLastActiveSceneView(); },
-                onStartDragOut: () => StartDragOutObject(go));
-        }
-
-        private void WireDragBehaviour(VisualElement row, FavoriteEntry entry, Object selectTarget, System.Action onDoubleClick, System.Action onStartDragOut)
-        {
-            row.RegisterCallback<MouseDownEvent>(evt =>
-            {
-                if (evt.target is Button) return;
-                if (evt.button != 0) return;
-
-                if (evt.clickCount == 2)
-                {
-                    onDoubleClick();
-                    evt.StopPropagation();
-                    return;
-                }
-
-                // Single-click selects the target so it's inspected — clicking a
-                // row and seeing nothing happen feels broken.
-                if (selectTarget != null) Selection.activeObject = selectTarget;
-
-                _pressedEntry = entry;
-                _mouseDownPos = evt.mousePosition;
-                row.CaptureMouse();
-            });
-
-            row.RegisterCallback<MouseMoveEvent>(evt =>
-            {
-                if (_pressedEntry != entry) return;
-
-                if (!_reordering)
-                {
-                    if ((evt.mousePosition - _mouseDownPos).sqrMagnitude < DragStartDistance * DragStartDistance) return;
-
-                    if (_list.worldBound.Contains(evt.mousePosition))
-                    {
-                        BeginReorder(row);
-                    }
-                    else
-                    {
-                        EndPress(row);
-                        onStartDragOut();
-                        return;
-                    }
-                }
-
-                UpdateDropIndex(evt.mousePosition);
-            });
-
-            row.RegisterCallback<MouseUpEvent>(_ =>
-            {
-                if (_pressedEntry != entry) return;
-                if (_reordering && _dropIndex >= 0)
-                {
-                    var fromIndex = FindEntryIndex(entry);
-                    if (fromIndex >= 0) FavoriteAssetsPreferences.Move(fromIndex, _dropIndex);
-                }
-                EndPress(row);
-            });
+            object boxed = new UnityEngine.UIElements.Cursor();
+            _defaultCursorIdField?.SetValue(boxed, (int)cursor);
+            return new StyleCursor((UnityEngine.UIElements.Cursor)boxed);
         }
 
         private void BeginReorder(VisualElement row)
@@ -339,16 +570,109 @@ namespace Kynesis.Starred.Editor
             _reordering = true;
             row.AddToClassList("assettray-row--dragging");
             _insertMarker.style.display = DisplayStyle.Flex;
+            rootVisualElement.style.cursor = BuildCursor(MouseCursor.MoveArrow);
+
+            var dragged = _pressedEntry ?? _draggingOwnEntry;
+            ShowForbiddenOverlay(dragged);
+            ShowDragGhost(row, dragged);
+        }
+
+        private void ShowDragGhost(VisualElement row, FavoriteEntry entry)
+        {
+            if (_dragGhost == null || row == null) return;
+
+            // Mirror the row's icon + visible label so the ghost reads the
+            // same as what the user clicked on.
+            Texture icon = null;
+            string label = null;
+            foreach (var child in row.Children())
+            {
+                if (child is Image img && icon == null) icon = img.image;
+                else if (child is Label l && label == null) label = l.text;
+            }
+
+            _dragGhostIcon.image = icon;
+            _dragGhostLabel.text = label ?? "";
+            _dragGhost.style.display = DisplayStyle.Flex;
+        }
+
+        private void PositionDragGhost(Vector2 mousePosition)
+        {
+            if (_dragGhost == null || _dragGhost.style.display == DisplayStyle.None) return;
+            var local = rootVisualElement.WorldToLocal(mousePosition);
+            _dragGhost.style.left = local.x + 12f;
+            _dragGhost.style.top  = local.y + 8f;
+        }
+
+        private void ShowForbiddenOverlay(FavoriteEntry dragged)
+        {
+            if (_forbiddenOverlay == null || dragged == null) return;
+
+            float minY = float.PositiveInfinity;
+            float maxY = float.NegativeInfinity;
+            foreach (var child in _list.Children())
+            {
+                if (child.userData is not FavoriteEntry e) continue;
+                var forbidden = dragged.IsSceneObject ? e.IsAsset : e.IsSceneObject;
+                if (!forbidden) continue;
+                if (child.layout.y < minY) minY = child.layout.y;
+                if (child.layout.yMax > maxY) maxY = child.layout.yMax;
+            }
+
+            if (float.IsPositiveInfinity(minY))
+            {
+                _forbiddenOverlay.style.display = DisplayStyle.None;
+                return;
+            }
+
+            _forbiddenOverlayLabel.text = dragged.IsSceneObject
+                ? "Project assets only"
+                : "Contextual items only";
+            _forbiddenOverlay.style.top = minY;
+            _forbiddenOverlay.style.left = 0;
+            _forbiddenOverlay.style.right = 0;
+            _forbiddenOverlay.style.height = maxY - minY;
+            _forbiddenOverlay.style.display = DisplayStyle.Flex;
         }
 
         private void EndPress(VisualElement row)
         {
-            row.RemoveFromClassList("assettray-row--dragging");
-            if (row.HasMouseCapture()) row.ReleaseMouse();
+            row?.RemoveFromClassList("assettray-row--dragging");
+            ResetDragState();
+        }
+
+        private void ResetDragState()
+        {
             _pressedEntry = null;
+            _pressedRow = null;
+            _pressedStartDragOut = null;
+            _pressedSelectTarget = null;
             _reordering = false;
+            _dropForbidden = false;
             _dropIndex = -1;
-            _insertMarker.style.display = DisplayStyle.None;
+            if (_insertMarker != null)
+            {
+                _insertMarker.style.display = DisplayStyle.None;
+                _insertMarker.RemoveFromClassList("assettray-insert-marker--forbidden");
+            }
+            if (rootVisualElement != null)
+            {
+                rootVisualElement.style.cursor = new StyleCursor(StyleKeyword.Null);
+                // DragEnter/DragLeave can pair unevenly across Unity versions,
+                // so scrub the hover class unconditionally.
+                rootVisualElement.RemoveFromClassList("assettray-list--drag-over");
+            }
+
+            if (_forbiddenOverlay != null) _forbiddenOverlay.style.display = DisplayStyle.None;
+            if (_dragGhost != null) _dragGhost.style.display = DisplayStyle.None;
+
+            // Any row still wearing the dragging class (e.g. because Rebuild
+            // ran mid-drag and the row survived) is cleaned up here.
+            if (_list != null)
+            {
+                foreach (var child in _list.Children())
+                    child.RemoveFromClassList("assettray-row--dragging");
+            }
         }
 
         private void UpdateDropIndex(Vector2 mousePosition)
@@ -356,12 +680,19 @@ namespace Kynesis.Starred.Editor
             var localY = _list.WorldToLocal(mousePosition).y;
             var rows = CollectRows();
 
-            var visibleIndex = rows.Count;
+            var rawIndex = rows.Count;
             for (var i = 0; i < rows.Count; i++)
             {
                 var mid = rows[i].layout.y + rows[i].layout.height * 0.5f;
-                if (localY < mid) { visibleIndex = i; break; }
+                if (localY < mid) { rawIndex = i; break; }
             }
+
+            // Scene-bound favorites float to the top; asset favorites follow.
+            // Constrain the drop so the dragged entry stays inside its own block.
+            var draggedEntry = _pressedEntry ?? _draggingOwnEntry;
+            var visibleIndex = ClampToBlock(draggedEntry, rawIndex, rows);
+            SetDropForbidden(rawIndex != visibleIndex);
+            PositionDragGhost(mousePosition);
 
             _dropIndex = VisibleIndexToEntryIndex(visibleIndex, rows);
 
@@ -373,6 +704,34 @@ namespace Kynesis.Starred.Editor
             _insertMarker.style.top = markerY - 1f;
             _insertMarker.style.left = rows.Count > 0 ? rows[0].layout.x : 0f;
             _insertMarker.style.width = rows.Count > 0 ? rows[0].layout.width : _list.layout.width;
+        }
+
+        private void SetDropForbidden(bool forbidden)
+        {
+            if (_dropForbidden == forbidden) return;
+            _dropForbidden = forbidden;
+
+            _insertMarker.EnableInClassList("assettray-insert-marker--forbidden", forbidden);
+            rootVisualElement.style.cursor = BuildCursor(forbidden ? MouseCursor.ArrowMinus : MouseCursor.MoveArrow);
+        }
+
+        private static int ClampToBlock(FavoriteEntry entry, int visibleIndex, List<VisualElement> rows)
+        {
+            if (entry == null) return visibleIndex;
+
+            var boundary = rows.Count;
+            for (var i = 0; i < rows.Count; i++)
+            {
+                if (rows[i].userData is FavoriteEntry e && e.IsAsset)
+                {
+                    boundary = i;
+                    break;
+                }
+            }
+
+            return entry.IsSceneObject
+                ? Mathf.Clamp(visibleIndex, 0, boundary)
+                : Mathf.Clamp(visibleIndex, boundary, rows.Count);
         }
 
         private static int VisibleIndexToEntryIndex(int visibleIndex, List<VisualElement> rows)
@@ -404,22 +763,6 @@ namespace Kynesis.Starred.Editor
             return rows;
         }
 
-        private static void StartDragOutAsset(Object asset)
-        {
-            DragAndDrop.PrepareStartDrag();
-            DragAndDrop.objectReferences = new[] { asset };
-            DragAndDrop.paths = new[] { AssetDatabase.GetAssetPath(asset) };
-            DragAndDrop.StartDrag(asset.name);
-        }
-
-        private static void StartDragOutObject(Object obj)
-        {
-            DragAndDrop.PrepareStartDrag();
-            DragAndDrop.objectReferences = new[] { obj };
-            DragAndDrop.paths = System.Array.Empty<string>();
-            DragAndDrop.StartDrag(obj.name);
-        }
-
         // ---------- Selection highlight ----------
 
         private void ApplyCurrentHighlight()
@@ -442,23 +785,77 @@ namespace Kynesis.Starred.Editor
 
         private void RegisterDropZone(VisualElement zone)
         {
-            zone.RegisterCallback<DragEnterEvent>(_ => zone.AddToClassList("assettray-list--drag-over"));
+            zone.RegisterCallback<DragEnterEvent>(_ =>
+            {
+                if (_draggingOwnEntry == null)
+                {
+                    // External drag entering — forget any stale press that
+                    // could otherwise be misread as a reorder of the last
+                    // clicked row while the user means to *add*.
+                    EndPress(_pressedRow);
+                    zone.AddToClassList("assettray-list--drag-over");
+                }
+            });
             zone.RegisterCallback<DragLeaveEvent>(_ => zone.RemoveFromClassList("assettray-list--drag-over"));
-            zone.RegisterCallback<DragExitedEvent>(_ => zone.RemoveFromClassList("assettray-list--drag-over"));
+            zone.RegisterCallback<DragExitedEvent>(_ =>
+            {
+                zone.RemoveFromClassList("assettray-list--drag-over");
+                // Drag ended (successfully or cancelled) — any remembered
+                // "own entry" is stale now.
+                ClearOwnDrag();
+            });
+            // Safety net: on Unity 6 some drags exit the window without firing
+            // DragLeave / DragExited. MouseLeave is dispatched reliably.
+            zone.RegisterCallback<MouseLeaveEvent>(_ => zone.RemoveFromClassList("assettray-list--drag-over"));
 
             zone.RegisterCallback<DragUpdatedEvent>(evt =>
             {
-                DragAndDrop.visualMode = HasAnySupportedItemInDrag() ? DragAndDropVisualMode.Copy : DragAndDropVisualMode.Rejected;
+                if (_draggingOwnEntry != null)
+                {
+                    // The user is reorganising one of our own rows via a native
+                    // drag — show the reorder marker and a Move cursor instead
+                    // of the "copy / add" affordance.
+                    _insertMarker.style.display = DisplayStyle.Flex;
+                    UpdateDropIndex(evt.mousePosition);
+                    DragAndDrop.visualMode = DragAndDropVisualMode.Move;
+                }
+                else
+                {
+                    DragAndDrop.visualMode = HasAnySupportedItemInDrag() ? DragAndDropVisualMode.Copy : DragAndDropVisualMode.Rejected;
+                }
                 evt.StopPropagation();
             });
 
             zone.RegisterCallback<DragPerformEvent>(evt =>
             {
                 DragAndDrop.AcceptDrag();
-                FavoriteAssetsPreferences.AddRange(DraggedEntries());
+
+                if (_draggingOwnEntry != null)
+                {
+                    var fromIndex = FindEntryIndex(_draggingOwnEntry);
+                    if (fromIndex >= 0 && _dropIndex >= 0 && !_dropForbidden)
+                        FavoriteAssetsPreferences.Move(fromIndex, _dropIndex);
+                    ClearOwnDrag();
+                }
+                else
+                {
+                    FavoriteAssetsPreferences.AddRange(DraggedEntries());
+                }
+
                 zone.RemoveFromClassList("assettray-list--drag-over");
                 evt.StopPropagation();
             });
+        }
+
+        private void ClearOwnDrag()
+        {
+            if (_draggingOwnEntry == null) return;
+            _draggingOwnEntry = null;
+            _dropIndex = -1;
+            SetDropForbidden(false);
+            if (_insertMarker != null) _insertMarker.style.display = DisplayStyle.None;
+            if (_forbiddenOverlay != null) _forbiddenOverlay.style.display = DisplayStyle.None;
+            if (rootVisualElement != null) rootVisualElement.style.cursor = new StyleCursor(StyleKeyword.Null);
         }
 
         private static bool HasAnySupportedItemInDrag()

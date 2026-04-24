@@ -6,14 +6,41 @@ namespace Kynesis.Starred.Editor
     [InitializeOnLoad]
     internal static class SelectionHistoryTracker
     {
+        private static bool _suppressNext;
+
         static SelectionHistoryTracker()
         {
             Selection.selectionChanged -= OnSelectionChanged;
             Selection.selectionChanged += OnSelectionChanged;
         }
 
+        /// <summary>
+        /// Skip the next <c>Selection.selectionChanged</c> event — callers that
+        /// programmatically change the selection (e.g. clicking a row inside a
+        /// Starred window) use this so the click doesn't reshuffle history.
+        /// </summary>
+        public static void SuppressNext() => _suppressNext = true;
+
+        /// <summary>
+        /// Select <paramref name="target"/> without recording the change in the
+        /// history list. Use this when a click inside a history row just means
+        /// "navigate there" — the entry is already in the list and shouldn't
+        /// get re-ranked under the user's cursor.
+        /// </summary>
+        public static void Select(UnityEngine.Object target)
+        {
+            SuppressNext();
+            Selection.activeObject = target;
+        }
+
         private static void OnSelectionChanged()
         {
+            if (_suppressNext)
+            {
+                _suppressNext = false;
+                return;
+            }
+
             var active = Selection.activeObject;
             if (active == null) return;
 

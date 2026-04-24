@@ -12,8 +12,20 @@ namespace Kynesis.Starred.Editor
     /// </summary>
     public class SelectionHistoryWindow : EditorWindow, IHasCustomMenu
     {
+        private const float DragStartDistance = 6f;
+
         private VisualElement _list;
         private Label _emptyState;
+
+        // Drag-out state — filled on PointerDown by a row, consumed by root-
+        // level Move / Leave handlers. Capture is not used (it fails silently
+        // during focus transitions on both Unity 2022 and 6), so move / leave
+        // events are handled at the root where they fire reliably.
+        private Vector2 _pressPos;
+        private bool _pressed;
+        private bool _dragStarted;
+        private System.Action _pressStartDragOut;
+        private Object _pressSelectTarget;
 
         [MenuItem("Tools/Starred/History")]
         public static void Open()
@@ -90,7 +102,142 @@ namespace Kynesis.Starred.Editor
             _list       = rootVisualElement.Q<VisualElement>("list");
             _emptyState = rootVisualElement.Q<Label>("empty-state");
 
+            rootVisualElement.pickingMode = PickingMode.Position;
+            rootVisualElement.focusable = true;
+            rootVisualElement.RegisterCallback<PointerDownEvent>(_ =>
+            {
+                if (focusedWindow != this) Focus();
+            }, TrickleDown.TrickleDown);
+
+            rootVisualElement.RegisterCallback<MouseLeaveEvent>(OnRootMouseLeave);
+            rootVisualElement.RegisterCallback<PointerUpEvent>(OnRootPointerUp, TrickleDown.TrickleDown);
+
+            RegisterImguiPressFallback();
+
             Rebuild();
+        }
+
+        // IMGUI reliably receives input on unfocused EditorWindows (that's how
+        // Unity's Project / Hierarchy work on first click), so we use it as a
+        // safety net for the initial press.
+        private void RegisterImguiPressFallback()
+        {
+            var fallback = new IMGUIContainer(OnImguiPress);
+            fallback.style.position = Position.Absolute;
+            fallback.style.left     = 0;
+            fallback.style.right    = 0;
+            fallback.style.top      = 0;
+            fallback.style.bottom   = 0;
+            fallback.pickingMode    = PickingMode.Ignore;
+            rootVisualElement.Insert(0, fallback);
+        }
+
+        private void OnImguiPress()
+        {
+            var evt = Event.current;
+            if (evt == null) return;
+            if (evt.type != EventType.MouseDown || evt.button != 0) return;
+
+            if (_pressed) return;
+            if (focusedWindow != this) Focus();
+
+            var target = rootVisualElement.panel?.Pick(evt.mousePosition);
+            if (target is Button) return;
+
+            var row = FindRowAncestor(target);
+            if (row?.userData is not FavoriteEntry entry) return;
+
+            var binding = BindFor(entry);
+            if (binding == null) return;
+
+            if (evt.clickCount == 2)
+            {
+                binding.OnDoubleClick();
+                return;
+            }
+
+            _pressed = true;
+            _dragStarted = false;
+            _pressPos = evt.mousePosition;
+            _pressStartDragOut = binding.OnStartDragOut;
+            _pressSelectTarget = binding.SelectTarget;
+        }
+
+        private static VisualElement FindRowAncestor(VisualElement element)
+        {
+            while (element != null && element.userData is not FavoriteEntry)
+                element = element.parent;
+            return element;
+        }
+
+        private sealed class RowBinding
+        {
+            public Object SelectTarget;
+            public System.Action OnDoubleClick;
+            public System.Action OnStartDragOut;
+        }
+
+        private static RowBinding BindFor(FavoriteEntry entry)
+        {
+            if (entry.IsAsset)
+            {
+                var path = AssetDatabase.GUIDToAssetPath(entry.Guid);
+                var asset = string.IsNullOrEmpty(path) ? null : AssetDatabase.LoadMainAssetAtPath(path);
+                if (asset == null) return null;
+                return new RowBinding
+                {
+                    SelectTarget = asset,
+                    OnDoubleClick = () => AssetDatabase.OpenAsset(asset),
+                    OnStartDragOut = () => AssetTrayRow.StartDragOutAsset(asset),
+                };
+            }
+
+            if (entry.IsSceneObject)
+            {
+                var go = SceneObjectResolver.Find(entry.ScenePath, entry.HierarchyPath);
+                if (go == null) return null;
+                return new RowBinding
+                {
+                    SelectTarget = go,
+                    OnDoubleClick = () => { SelectionHistoryTracker.Select(go); SceneView.FrameLastActiveSceneView(); },
+                    OnStartDragOut = () => AssetTrayRow.StartDragOutObject(go),
+                };
+            }
+
+            return null;
+        }
+
+        private void OnRootMouseLeave(MouseLeaveEvent evt)
+        {
+            if (!_pressed || _dragStarted || _pressStartDragOut == null) return;
+            if ((evt.mousePosition - _pressPos).sqrMagnitude < DragStartDistance * DragStartDistance) return;
+
+            _dragStarted = true;
+            _pressStartDragOut();
+        }
+
+        private void OnRootPointerUp(PointerUpEvent evt)
+        {
+            if (!_pressed) return;
+            // Ignore the synthetic release UITK fires during focus transitions
+            // (see the matching guard in FavoriteAssetsWindow).
+            if ((evt.pressedButtons & 1) != 0) return;
+            if (evt.button != 0) return;
+
+            // Release without drag — select now rather than on press, so
+            // Selection.selectionChanged doesn't repaint mid-gesture.
+            if (!_dragStarted && _pressSelectTarget != null)
+                SelectionHistoryTracker.Select(_pressSelectTarget);
+
+            ResetPress();
+        }
+
+        private void ResetPress()
+        {
+            _pressed = false;
+            _dragStarted = false;
+            _pressStartDragOut = null;
+            _pressSelectTarget = null;
         }
 
         private void Rebuild()
@@ -112,19 +259,23 @@ namespace Kynesis.Starred.Editor
             ApplyCurrentHighlight();
         }
 
-        private static VisualElement CreateRow(FavoriteEntry entry)
+        private VisualElement CreateRow(FavoriteEntry entry)
         {
             return entry.IsAsset ? CreateAssetRow(entry)
                  : entry.IsSceneObject ? CreateSceneObjectRow(entry)
                  : null;
         }
 
-        private static VisualElement CreateAssetRow(FavoriteEntry entry)
+        private VisualElement CreateAssetRow(FavoriteEntry entry)
         {
             var row = AssetTrayRow.CreateAssetRow(entry.Guid, out var asset, out var path, userData: entry);
             if (asset == null) return row;
 
-            row.Add(AssetTrayRow.CreatePingButton(asset));
+            row.Add(AssetTrayRow.CreatePingButton(() =>
+            {
+                EditorGUIUtility.PingObject(asset);
+                SelectionHistoryTracker.Select(asset);
+            }));
             row.Add(CreateStarButton(entry));
             WireAssetInteractions(row, asset);
 
@@ -137,7 +288,7 @@ namespace Kynesis.Starred.Editor
             return row;
         }
 
-        private static VisualElement CreateSceneObjectRow(FavoriteEntry entry)
+        private VisualElement CreateSceneObjectRow(FavoriteEntry entry)
         {
             var row = AssetTrayRow.CreateSceneObjectRow(entry, out var go);
             if (row == null) return null;
@@ -147,7 +298,7 @@ namespace Kynesis.Starred.Editor
                 row.Add(AssetTrayRow.CreatePingButton(() =>
                 {
                     EditorGUIUtility.PingObject(go);
-                    Selection.activeGameObject = go;
+                    SelectionHistoryTracker.Select(go);
                 }));
                 row.Add(CreateStarButton(entry));
                 WireSceneObjectInteractions(row, go);
@@ -159,11 +310,11 @@ namespace Kynesis.Starred.Editor
                     evt.menu.AppendAction("Show in Hierarchy", _ =>
                     {
                         EditorGUIUtility.PingObject(go);
-                        Selection.activeGameObject = go;
+                        SelectionHistoryTracker.Select(go);
                     });
                     evt.menu.AppendAction("Frame in Scene View", _ =>
                     {
-                        Selection.activeGameObject = go;
+                        SelectionHistoryTracker.Select(go);
                         SceneView.FrameLastActiveSceneView();
                     });
                 }));
@@ -175,42 +326,45 @@ namespace Kynesis.Starred.Editor
             return row;
         }
 
-        private static void WireAssetInteractions(VisualElement row, Object asset)
+        private void WireAssetInteractions(VisualElement row, Object asset)
         {
-            row.RegisterCallback<MouseDownEvent>(evt =>
+            WireInteractions(row, asset,
+                onDoubleClick:  () => AssetDatabase.OpenAsset(asset),
+                onStartDragOut: () => AssetTrayRow.StartDragOutAsset(asset));
+        }
+
+        private void WireSceneObjectInteractions(VisualElement row, GameObject go)
+        {
+            WireInteractions(row, go,
+                onDoubleClick:  () => { SelectionHistoryTracker.Select(go); SceneView.FrameLastActiveSceneView(); },
+                onStartDragOut: () => AssetTrayRow.StartDragOutObject(go));
+        }
+
+        private void WireInteractions(VisualElement row, Object selectTarget, System.Action onDoubleClick, System.Action onStartDragOut)
+        {
+            // The row only records the press; the window root handles leave /
+            // up so pointer capture (which can fail during focus transitions)
+            // isn't in the path.
+            row.RegisterCallback<PointerDownEvent>(evt =>
             {
                 if (evt.target is Button) return;
                 if (evt.button != 0) return;
 
                 if (evt.clickCount == 2)
                 {
-                    AssetDatabase.OpenAsset(asset);
+                    onDoubleClick();
                     evt.StopPropagation();
                     return;
                 }
 
-                Selection.activeObject = asset;
+                _pressed = true;
+                _dragStarted = false;
+                _pressPos = evt.position;
+                _pressStartDragOut = onStartDragOut;
+                _pressSelectTarget = selectTarget;
             });
         }
 
-        private static void WireSceneObjectInteractions(VisualElement row, GameObject go)
-        {
-            row.RegisterCallback<MouseDownEvent>(evt =>
-            {
-                if (evt.target is Button) return;
-                if (evt.button != 0) return;
-
-                if (evt.clickCount == 2)
-                {
-                    Selection.activeGameObject = go;
-                    SceneView.FrameLastActiveSceneView();
-                    evt.StopPropagation();
-                    return;
-                }
-
-                Selection.activeGameObject = go;
-            });
-        }
 
         private static Button CreateStarButton(FavoriteEntry entry)
         {

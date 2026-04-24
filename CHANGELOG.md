@@ -5,6 +5,31 @@ All notable changes to this package are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.3] - 2026-04-24
+
+### Added
+
+- **Drag from History → Favorites** promotes a history entry straight into Favorites. History rows also drag out onto the Scene View / Inspector the same way Favorites do.
+- **Reorder within Favorites** — drag a favorited row inside the window to change its position.
+- **Forbidden-zone overlay**: when you start reordering, the block you can't cross into (scene-bound vs asset favorites) is dimmed out and labelled, with a red insert-marker and "not-allowed" cursor at the boundary.
+- **Visible separator** between scene-bound and asset favorites, so the grouping is obvious even outside a reorder.
+- **Context prefix on scene-bound rows** — each row now renders as `[sceneIcon] SceneName › [objIcon] ObjectName` (prefab stage entries show the prefab icon instead).
+- **Drag ghost** follows the cursor during in-window reorder (native drag takes over once you leave the window).
+
+### Changed
+
+- **History clicks no longer reshuffle history** — selecting an entry from the History window doesn't bump it to the top. `SelectionHistoryTracker.SuppressNext()` / `Select()` scope the suppression to Starred-originated selection changes only.
+- **Selection happens on release, not press**. Firing `Selection.activeObject` on press was interrupting the event stream (Inspector repaints, focus jumps), which broke drag-to-Scene on unfocused windows and caused "click-only" behaviour. Pointer events + an IMGUI press fallback now drive all drag detection; selection is applied on the matching release when no drag happened.
+- **Contextual favorites are reorder-only** — scene / prefab-stage entries no longer initiate a drag-out (there's no meaningful "instantiate" for an already-existing scene object).
+- Drag code moved off per-row pointer capture (which fails during Unity's focus transition) onto window-root events plus an IMGUI press fallback. This lets you click-and-drag on an unfocused Favorites / History window on first click, matching Unity's Project / Hierarchy behaviour.
+
+### Fixed
+
+- **Unity 6: first click on unfocused window** no longer swallows the drag. Previously the click registered as a plain selection and the following move did nothing.
+- **External drag-in misread as reorder** — a leftover press from a prior click could hijack an incoming Project-asset drag into a reorder of the last-touched favorite. Press state is now scrubbed on `DragEnter` / IMGUI `DragUpdated` and on any `PointerMove` that reports the left button isn't physically held.
+- **Stuck "dragging" highlight / dead reorder input** after a `Rebuild` mid-drag — state reset at the top of `Rebuild`, plus defensive re-scrubbing.
+- **Drop-zone hover highlight stuck on** after a drag left the window on Unity 6 — `DragExited` / `MouseLeave` both reliably clear it now.
+
 ## [0.1.2] - 2026-04-24
 
 ### Fixed

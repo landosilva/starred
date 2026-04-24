@@ -68,13 +68,43 @@ namespace Kynesis.Starred.Editor
             if (!SceneObjectResolver.IsSceneAvailable(entry.ScenePath)) return null;
 
             go = SceneObjectResolver.Find(entry.ScenePath, entry.HierarchyPath);
-            var displayName = go != null ? go.name : LastSegment(entry.HierarchyPath);
-            var tooltip     = $"{entry.ScenePath} → {entry.HierarchyPath}";
-            var icon = go != null
+            var objectName = go != null ? go.name : LastSegment(entry.HierarchyPath);
+            var tooltip    = $"{entry.ScenePath} → {entry.HierarchyPath}";
+            var objectIcon = go != null
                 ? EditorGUIUtility.ObjectContent(go, go.GetType()).image
                 : EditorGUIUtility.IconContent("console.warnicon.sml").image;
 
-            return CreateShell(entry, icon, displayName, tooltip, missing: go == null);
+            var isPrefabStage = entry.ScenePath != null && entry.ScenePath.EndsWith(".prefab");
+            var contextIcon = EditorGUIUtility.IconContent(isPrefabStage ? "Prefab Icon" : "SceneAsset Icon").image;
+            var contextName = System.IO.Path.GetFileNameWithoutExtension(entry.ScenePath);
+
+            var row = new VisualElement();
+            row.AddToClassList(Classes.Row);
+            row.userData = entry;
+            if (go == null) row.AddToClassList(Classes.Missing);
+
+            var ctxIcon = new Image { image = contextIcon, scaleMode = ScaleMode.ScaleToFit };
+            ctxIcon.AddToClassList(Classes.Icon);
+            ctxIcon.AddToClassList("assettray-row-context-icon");
+            row.Add(ctxIcon);
+
+            var ctxLabel = new Label(contextName);
+            ctxLabel.AddToClassList("assettray-row-context-label");
+            row.Add(ctxLabel);
+
+            var separator = new Label("›");
+            separator.AddToClassList("assettray-row-context-separator");
+            row.Add(separator);
+
+            var mainIcon = new Image { image = objectIcon, scaleMode = ScaleMode.ScaleToFit };
+            mainIcon.AddToClassList(Classes.Icon);
+            row.Add(mainIcon);
+
+            var mainLabel = new Label(objectName) { tooltip = tooltip };
+            mainLabel.AddToClassList(Classes.Label);
+            row.Add(mainLabel);
+
+            return row;
         }
 
         private static string LastSegment(string path)
@@ -127,6 +157,22 @@ namespace Kynesis.Starred.Editor
                 if (child.userData == null) continue;
                 child.EnableInClassList(Classes.Current, isCurrent(child.userData));
             }
+        }
+
+        public static void StartDragOutAsset(UnityEngine.Object asset)
+        {
+            DragAndDrop.PrepareStartDrag();
+            DragAndDrop.objectReferences = new[] { asset };
+            DragAndDrop.paths = new[] { AssetDatabase.GetAssetPath(asset) };
+            DragAndDrop.StartDrag(asset.name);
+        }
+
+        public static void StartDragOutObject(UnityEngine.Object obj)
+        {
+            DragAndDrop.PrepareStartDrag();
+            DragAndDrop.objectReferences = new[] { obj };
+            DragAndDrop.paths = Array.Empty<string>();
+            DragAndDrop.StartDrag(obj.name);
         }
     }
 }

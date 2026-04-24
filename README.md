@@ -52,7 +52,7 @@ https://github.com/landosilva/starred.git
 **Pin to a release:**
 
 ```
-https://github.com/landosilva/starred.git#v0.1.2
+https://github.com/landosilva/starred.git#v0.1.3
 ```
 
 **Local clone:**
@@ -105,9 +105,11 @@ Favorited items get a small gold ★ drawn on top of their row — in the **Proj
 <div align="center">
 
 <!-- SLOT: overlays -->
-<img src="Documentation~/Images/overlays.png" alt="Side-by-side Project window and Hierarchy both showing gold ★ overlays on favorited rows" width="820" />
+<img src="Documentation~/Images/overlays.png" alt="Unity Editor showing gold ★ overlays in the Hierarchy and Project window, alongside the Starred Favorites and Selection History windows" width="820" />
 
 </div>
+
+The shot above shows everything together: gold ★ overlays on favorited rows in the **Hierarchy** (top-left) and **Project** (bottom-left), the **Favorites** tray (top-right) holding the current scene's pinned GameObjects, and the **Selection History** list (bottom-right) with its own star buttons for promoting recent selections.
 
 Both overlays toggle independently in Preferences.
 
