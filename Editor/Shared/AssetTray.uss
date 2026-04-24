@@ -1,0 +1,135 @@
+.assettray-root {
+    flex-grow: 1;
+    background-color: rgba(0, 0, 0, 0.08);
+}
+
+.assettray-list-scroll {
+    flex-grow: 1;
+}
+
+.assettray-list {
+    padding: 4px;
+}
+
+.assettray-list--drag-over {
+    background-color: rgba(80, 140, 255, 0.15);
+}
+
+.assettray-empty {
+    padding: 24px;
+    font-size: 12px;
+    -unity-text-align: middle-center;
+    color: rgb(130, 130, 130);
+    -unity-font-style: italic;
+}
+
+.assettray-row {
+    flex-direction: row;
+    align-items: center;
+    padding: 4px 6px;
+    margin: 1px 0;
+    border-radius: 3px;
+}
+
+.assettray-row:hover {
+    background-color: rgba(255, 255, 255, 0.06);
+}
+
+.assettray-row--current {
+    background-color: rgba(80, 140, 255, 0.18);
+}
+
+.assettray-row--missing .assettray-row-label {
+    color: rgb(220, 60, 60);
+    -unity-font-style: italic;
+}
+
+.assettray-row--dragging {
+    opacity: 0.5;
+}
+
+.assettray-row-icon {
+    width: 16px;
+    height: 16px;
+    margin-right: 6px;
+    flex-shrink: 0;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.assettray-row-label {
+    flex-grow: 1;
+    font-size: 12px;
+    color: rgb(220, 220, 220);
+}
+
+.assettray-row-ping {
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    margin-right: 2px;
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+    border-radius: 3px;
+    justify-content: center;
+    align-items: center;
+    flex-direction: row;
+    flex-shrink: 0;
+}
+
+.assettray-row-ping:hover {
+    background-color: rgba(255, 255, 255, 0.12);
+}
+
+.assettray-row-ping Image {
+    width: 12px;
+    height: 12px;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.assettray-row-action {
+    width: 18px;
+    height: 18px;
+    padding: 0 0 3px 0;
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+    border-radius: 3px;
+    justify-content: center;
+    align-items: center;
+    flex-direction: row;
+    flex-shrink: 0;
+    color: rgb(150, 150, 150);
+    -unity-text-align: middle-center;
+}
+
+.assettray-row-action--remove {
+    font-size: 16px;
+}
+
+.assettray-row-action--remove:hover {
+    background-color: rgba(220, 60, 60, 0.3);
+    color: rgb(240, 240, 240);
+}
+
+.assettray-row-action--star {
+    font-size: 14px;
+}
+
+.assettray-row-action--star:hover {
+    background-color: rgba(255, 255, 255, 0.12);
+    color: rgb(240, 240, 240);
+}
+
+.assettray-row-action--star-on {
+    color: rgb(250, 200, 70);
+}
+
+.assettray-row-action--star-on:hover {
+    color: rgb(255, 220, 110);
+}
+
+.assettray-insert-marker {
+    height: 2px;
+    background-color: rgb(80, 140, 255);
+    border-radius: 1px;
+}
+

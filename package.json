@@ -1,0 +1,21 @@
+{
+  "name": "com.kynesis.starred",
+  "version": "0.1.0",
+  "displayName": "Starred",
+  "description": "A compact favorites tray plus selection history for the Unity Editor. Star assets and scene objects, jump back to recently-used items, and see at-a-glance which things are starred from the Project window and the Hierarchy.",
+  "unity": "6000.0",
+  "keywords": [
+    "editor",
+    "tools",
+    "favorites",
+    "history",
+    "workflow",
+    "productivity"
+  ],
+  "author": {
+    "name": "Kynesis"
+  },
+  "documentationUrl": "https://github.com/landosilva/starred/blob/main/Documentation~/index.md",
+  "changelogUrl": "https://github.com/landosilva/starred/blob/main/CHANGELOG.md",
+  "licensesUrl": "https://github.com/landosilva/starred/blob/main/LICENSE.md"
+}
