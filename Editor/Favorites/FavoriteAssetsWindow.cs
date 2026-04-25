@@ -17,11 +17,12 @@ namespace Kynesis.Starred.Editor
         private const float DragStartDistance = 6f;
 
         private VisualElement _list;
-        private VisualElement _listContainer;
         private Label _emptyState;
         private VisualElement _insertMarker;
         private VisualElement _forbiddenOverlay;
         private Label _forbiddenOverlayLabel;
+        private VisualElement _addOverlay;
+        private Label _addOverlayLabel;
         private VisualElement _dragGhost;
         private Image _dragGhostIcon;
         private Label _dragGhostLabel;
@@ -39,6 +40,11 @@ namespace Kynesis.Starred.Editor
         // If the native drag re-enters the window we resume reorder mode on it
         // instead of treating the drop as a duplicate "add".
         private FavoriteEntry _draggingOwnEntry;
+        // The object we placed into DragAndDrop when the own-drag started —
+        // used to verify on re-entry that the active drag is still ours and
+        // not a fresh external drag (e.g. user picked up something different
+        // from the Project window after a rejected drop).
+        private Object _draggingOwnPayload;
 
         [MenuItem("Tools/Starred/Favorites")]
         public static void Open()
@@ -118,9 +124,8 @@ namespace Kynesis.Starred.Editor
             uxml.CloneTree(rootVisualElement);
             rootVisualElement.styleSheets.Add(uss);
 
-            _list          = rootVisualElement.Q<VisualElement>("list");
-            _listContainer = rootVisualElement.Q<VisualElement>("root");
-            _emptyState    = rootVisualElement.Q<Label>("empty-state");
+            _list       = rootVisualElement.Q<VisualElement>("list");
+            _emptyState = rootVisualElement.Q<Label>("empty-state");
 
             _forbiddenOverlay = new VisualElement();
             _forbiddenOverlay.AddToClassList("assettray-forbidden-overlay");
@@ -138,6 +143,19 @@ namespace Kynesis.Starred.Editor
             _insertMarker.style.display = DisplayStyle.None;
             _insertMarker.pickingMode = PickingMode.Ignore;
             _list.Add(_insertMarker);
+
+            _addOverlay = new VisualElement();
+            _addOverlay.AddToClassList("assettray-add-overlay");
+            _addOverlay.style.left = 4;
+            _addOverlay.style.right = 4;
+            _addOverlay.style.top = 4;
+            _addOverlay.style.bottom = 4;
+            _addOverlay.style.display = DisplayStyle.None;
+            _addOverlay.pickingMode = PickingMode.Ignore;
+            _addOverlayLabel = new Label();
+            _addOverlayLabel.AddToClassList("assettray-add-overlay-label");
+            _addOverlay.Add(_addOverlayLabel);
+            rootVisualElement.Add(_addOverlay);
 
             _dragGhost = new VisualElement();
             _dragGhost.AddToClassList("assettray-drag-ghost");
@@ -299,13 +317,27 @@ namespace Kynesis.Starred.Editor
             // Hand off to a native DragAndDrop. Remember the entry so a re-entry
             // resumes reorder rather than adding a duplicate.
             _draggingOwnEntry = _pressedEntry;
+            _draggingOwnPayload = _pressedSelectTarget;
             var startDragOut = _pressedStartDragOut;
-            var overlayEntry = _pressedEntry;
             EndPress(_pressedRow);
             startDragOut();
-            // Keep the forbidden overlay visible through the drag-out so the
-            // user sees the constraint the moment they come back.
-            ShowForbiddenOverlay(overlayEntry);
+            // Mouse just left — overlay should be gone. It re-appears via
+            // DragEnter if the user comes back into the window with the same
+            // drag payload.
+        }
+
+        // Returns true if the DragAndDrop currently carries the payload we
+        // started — i.e. the active drag is still ours, not a different one
+        // started after our drag ended without a clean DragExited (e.g. a
+        // rejected drop on the Scene View).
+        private bool IsOurDragStillActive()
+        {
+            if (_draggingOwnPayload == null) return false;
+            var refs = DragAndDrop.objectReferences;
+            if (refs == null) return false;
+            foreach (var r in refs)
+                if (r == _draggingOwnPayload) return true;
+            return false;
         }
 
         private void OnRootPointerUp(PointerUpEvent evt)
@@ -369,6 +401,12 @@ namespace Kynesis.Starred.Editor
                 case EventType.DragPerform:
                     HandleImguiDrop(evt);
                     break;
+                // Note: not handling IMGUI EventType.DragExited here. Some
+                // Unity versions also fire it whenever the drag leaves the
+                // window (not only at drag end), which would clear
+                // _draggingOwnEntry mid-drag and break re-entry. Stale own-
+                // drag state is corrected on the next DragEnter via the
+                // payload-identity check (IsOurDragStillActive).
             }
         }
 
@@ -435,7 +473,6 @@ namespace Kynesis.Starred.Editor
 
             // Contextual (scene / prefab-stage) favorites float to the top so
             // they're visible while you're editing them. Asset favorites follow.
-            var renderedCount = 0;
             var sceneCount = 0;
             foreach (var entry in FavoriteAssetsPreferences.Entries)
             {
@@ -443,11 +480,10 @@ namespace Kynesis.Starred.Editor
                 var row = CreateSceneObjectRow(entry);
                 if (row == null) continue;
                 _list.Add(row);
-                renderedCount++;
                 sceneCount++;
             }
 
-            var assetCount = 0;
+            var renderedCount = sceneCount;
             foreach (var entry in FavoriteAssetsPreferences.Entries)
             {
                 if (!entry.IsAsset) continue;
@@ -455,12 +491,12 @@ namespace Kynesis.Starred.Editor
                 if (row == null) continue;
                 _list.Add(row);
                 renderedCount++;
-                assetCount++;
             }
 
             // Visible separator between the two blocks so the "contextual on
             // top, assets below" rule is obvious even outside a reorder.
-            if (sceneCount > 0 && assetCount > 0)
+            var hasBothBlocks = sceneCount > 0 && renderedCount > sceneCount;
+            if (hasBothBlocks)
             {
                 var separator = new VisualElement();
                 separator.AddToClassList("assettray-separator");
@@ -625,12 +661,16 @@ namespace Kynesis.Starred.Editor
                 return;
             }
 
+            // When dragging an asset entry the forbidden block is the scene
+            // block above it — extend the overlay down so it visually
+            // swallows the separator line. Going the other way, the overlay
+            // sits flush with the first asset row (no extra reach needed).
+            if (dragged.IsAsset) maxY += 10f;
+
             _forbiddenOverlayLabel.text = dragged.IsSceneObject
                 ? "Project assets only"
                 : "Contextual items only";
             _forbiddenOverlay.style.top = minY;
-            _forbiddenOverlay.style.left = 0;
-            _forbiddenOverlay.style.right = 0;
             _forbiddenOverlay.style.height = maxY - minY;
             _forbiddenOverlay.style.display = DisplayStyle.Flex;
         }
@@ -785,21 +825,33 @@ namespace Kynesis.Starred.Editor
 
         private void RegisterDropZone(VisualElement zone)
         {
-            zone.RegisterCallback<DragEnterEvent>(_ =>
+            zone.RegisterCallback<DragEnterEvent>(evt =>
             {
-                if (_draggingOwnEntry == null)
+                // Drag events bubble from children — only treat this as a real
+                // window-level entry when the target is the root itself.
+                if (evt.target != zone) return;
+
+                if (_draggingOwnEntry != null && IsOurDragStillActive())
                 {
-                    // External drag entering — forget any stale press that
-                    // could otherwise be misread as a reorder of the last
-                    // clicked row while the user means to *add*.
+                    ShowForbiddenOverlay(_draggingOwnEntry);
+                }
+                else
+                {
+                    if (_draggingOwnEntry != null) ClearOwnDrag();
                     EndPress(_pressedRow);
-                    zone.AddToClassList("assettray-list--drag-over");
+                    ShowAddOverlay();
                 }
             });
-            zone.RegisterCallback<DragLeaveEvent>(_ => zone.RemoveFromClassList("assettray-list--drag-over"));
+            zone.RegisterCallback<DragLeaveEvent>(evt =>
+            {
+                if (evt.target != zone) return;
+                HideAddOverlay();
+                if (_draggingOwnEntry != null && _forbiddenOverlay != null)
+                    _forbiddenOverlay.style.display = DisplayStyle.None;
+            });
             zone.RegisterCallback<DragExitedEvent>(_ =>
             {
-                zone.RemoveFromClassList("assettray-list--drag-over");
+                HideAddOverlay();
                 // Drag ended (successfully or cancelled) — any remembered
                 // "own entry" is stale now.
                 ClearOwnDrag();
@@ -812,6 +864,10 @@ namespace Kynesis.Starred.Editor
             {
                 if (_draggingOwnEntry != null)
                 {
+                    // Re-show overlay if a missed DragEnter left it hidden.
+                    if (_forbiddenOverlay.style.display == DisplayStyle.None)
+                        ShowForbiddenOverlay(_draggingOwnEntry);
+
                     // The user is reorganising one of our own rows via a native
                     // drag — show the reorder marker and a Move cursor instead
                     // of the "copy / add" affordance.
@@ -821,6 +877,8 @@ namespace Kynesis.Starred.Editor
                 }
                 else
                 {
+                    if (_addOverlay.style.display == DisplayStyle.None && HasAnySupportedItemInDrag())
+                        ShowAddOverlay();
                     DragAndDrop.visualMode = HasAnySupportedItemInDrag() ? DragAndDropVisualMode.Copy : DragAndDropVisualMode.Rejected;
                 }
                 evt.StopPropagation();
@@ -842,15 +900,43 @@ namespace Kynesis.Starred.Editor
                     FavoriteAssetsPreferences.AddRange(DraggedEntries());
                 }
 
-                zone.RemoveFromClassList("assettray-list--drag-over");
+                HideAddOverlay();
                 evt.StopPropagation();
             });
+        }
+
+
+        private void ShowAddOverlay()
+        {
+            if (_addOverlay == null) return;
+
+            var allDuplicate = true;
+            var anyItem = false;
+            foreach (var entry in DraggedEntries())
+            {
+                anyItem = true;
+                if (!FavoriteAssetsPreferences.Contains(entry)) { allDuplicate = false; break; }
+            }
+            // Some drag sources only populate references on DragPerform; fall
+            // back to the additive label until we know better.
+            var duplicate = anyItem && allDuplicate;
+
+            _addOverlayLabel.text = duplicate ? "Already in Favorites" : "Drop to add to Favorites";
+            _addOverlay.EnableInClassList("assettray-add-overlay--duplicate", duplicate);
+            _addOverlay.style.display = DisplayStyle.Flex;
+            _addOverlay.BringToFront();
+        }
+
+        private void HideAddOverlay()
+        {
+            if (_addOverlay != null) _addOverlay.style.display = DisplayStyle.None;
         }
 
         private void ClearOwnDrag()
         {
             if (_draggingOwnEntry == null) return;
             _draggingOwnEntry = null;
+            _draggingOwnPayload = null;
             _dropIndex = -1;
             SetDropForbidden(false);
             if (_insertMarker != null) _insertMarker.style.display = DisplayStyle.None;

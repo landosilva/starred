@@ -5,6 +5,32 @@ All notable changes to this package are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.4] - 2026-04-25
+
+### Added
+
+- **"Drop to add" overlay** appears the moment an external drag enters the Favorites window — green-tinted when at least one item isn't already favorited, amber-tinted ("Already in Favorites") when every dragged item is a duplicate.
+- **Forbidden-zone overlay** during reorder — the block you can't cross into is dimmed with a slate / blue-accent overlay and a small italic label ("Project assets only" / "Contextual items only"). The insert marker turns red and the cursor switches to "not allowed" right at the boundary.
+- **Visible separator line** between contextual and asset blocks at all times (not only during reorder).
+- **Drag ghost** follows the cursor during in-window reorder — icon + name pill matching the row you picked up. Native drag takes over once you leave the window.
+- **Context prefix on scene-bound rows** — each contextual row now renders as `[sceneIcon] SceneName › [objIcon] ObjectName` (prefab-stage entries show the prefab icon).
+
+### Fixed
+
+- **Unity 6 unfocused-window first-click drag** — a fresh click on an inactive Favorites / History window now starts the drag immediately. Press detection moved off per-row pointer capture (which fails during Unity's focus transition) onto window-root events plus an IMGUI press fallback, mirroring how Unity's Project / Hierarchy work.
+- **External drag misread as reorder** — a leftover press from a prior click could hijack an incoming Project-asset drag. Press state now scrubs aggressively on `DragEnter`, on stale `PointerMove` (left button not held), and on IMGUI `DragUpdated`.
+- **Stuck overlay after a rejected drop** (e.g. dragging a SceneAsset onto the Scene View, which Unity blocks). Replaced the timer-based fallback with a payload-identity check on `DragAndDrop.objectReferences` — overlay clears the moment a different drag arrives.
+- **Flicker on drag re-entry** — `DragEnter` / `DragLeave` were bubbling from child rows. Guarded with `evt.target == zone` so overlay only toggles on real window-level enter/leave.
+- **Selection now applies on release**, not on press, so `Selection.selectionChanged` no longer interrupts the gesture (which was breaking drag-to-Scene on unfocused windows).
+- Prefab-stage detection hardened — uses `Path.GetExtension` instead of `EndsWith` to avoid false positives on assets named `*prefab.unity`.
+
+### Changed
+
+- **Contextual favorites are reorder-only.** Scene / prefab-stage entries no longer initiate a drag-out — there's no meaningful "instantiate" for an existing scene object. Reorder, click-to-select, double-click-to-frame, and the context menu all still work.
+- **Reorder is constrained to its own block.** Dragging a contextual row down past the separator is rejected (visual feedback as above); dragging an asset row up into the contextual block is rejected the same way.
+- Drag detection on the History window restructured to mirror Favorites' single root-level press handler (was per-row + IMGUI; now matches Favorites for consistency).
+- Internal code cleanup — removed dead fields (`_listContainer`), no-op helpers (`NoteDragSignal`), and ~25 lines of duplicated wiring helpers in `SelectionHistoryWindow`.
+
 ## [0.1.3] - 2026-04-24
 
 ### Added

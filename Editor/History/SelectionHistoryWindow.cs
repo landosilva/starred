@@ -104,17 +104,45 @@ namespace Kynesis.Starred.Editor
 
             rootVisualElement.pickingMode = PickingMode.Position;
             rootVisualElement.focusable = true;
-            rootVisualElement.RegisterCallback<PointerDownEvent>(_ =>
-            {
-                if (focusedWindow != this) Focus();
-            }, TrickleDown.TrickleDown);
 
+            // Press / leave / up handled at the root so pointer capture (which
+            // fails silently during Unity's focus transition on both 2022 and
+            // 6) isn't in the path. TrickleDown on Down/Up also keeps child
+            // buttons from swallowing the events.
+            rootVisualElement.RegisterCallback<PointerDownEvent>(OnRootPointerDown, TrickleDown.TrickleDown);
             rootVisualElement.RegisterCallback<MouseLeaveEvent>(OnRootMouseLeave);
             rootVisualElement.RegisterCallback<PointerUpEvent>(OnRootPointerUp, TrickleDown.TrickleDown);
 
             RegisterImguiPressFallback();
 
             Rebuild();
+        }
+
+        private void OnRootPointerDown(PointerDownEvent evt)
+        {
+            if (focusedWindow != this) Focus();
+
+            if (evt.button != 0) return;
+            if (evt.target is Button) return;
+
+            var row = FindRowAncestor(evt.target as VisualElement);
+            if (row?.userData is not FavoriteEntry entry) return;
+
+            var binding = BindFor(entry);
+            if (binding == null) return;
+
+            if (evt.clickCount == 2)
+            {
+                binding.OnDoubleClick();
+                evt.StopPropagation();
+                return;
+            }
+
+            _pressed = true;
+            _dragStarted = false;
+            _pressPos = evt.position;
+            _pressStartDragOut = binding.OnStartDragOut;
+            _pressSelectTarget = binding.SelectTarget;
         }
 
         // IMGUI reliably receives input on unfocused EditorWindows (that's how
@@ -277,7 +305,6 @@ namespace Kynesis.Starred.Editor
                 SelectionHistoryTracker.Select(asset);
             }));
             row.Add(CreateStarButton(entry));
-            WireAssetInteractions(row, asset);
 
             row.AddManipulator(new ContextualMenuManipulator(evt =>
             {
@@ -301,7 +328,6 @@ namespace Kynesis.Starred.Editor
                     SelectionHistoryTracker.Select(go);
                 }));
                 row.Add(CreateStarButton(entry));
-                WireSceneObjectInteractions(row, go);
 
                 row.AddManipulator(new ContextualMenuManipulator(evt =>
                 {
@@ -325,46 +351,6 @@ namespace Kynesis.Starred.Editor
             }
             return row;
         }
-
-        private void WireAssetInteractions(VisualElement row, Object asset)
-        {
-            WireInteractions(row, asset,
-                onDoubleClick:  () => AssetDatabase.OpenAsset(asset),
-                onStartDragOut: () => AssetTrayRow.StartDragOutAsset(asset));
-        }
-
-        private void WireSceneObjectInteractions(VisualElement row, GameObject go)
-        {
-            WireInteractions(row, go,
-                onDoubleClick:  () => { SelectionHistoryTracker.Select(go); SceneView.FrameLastActiveSceneView(); },
-                onStartDragOut: () => AssetTrayRow.StartDragOutObject(go));
-        }
-
-        private void WireInteractions(VisualElement row, Object selectTarget, System.Action onDoubleClick, System.Action onStartDragOut)
-        {
-            // The row only records the press; the window root handles leave /
-            // up so pointer capture (which can fail during focus transitions)
-            // isn't in the path.
-            row.RegisterCallback<PointerDownEvent>(evt =>
-            {
-                if (evt.target is Button) return;
-                if (evt.button != 0) return;
-
-                if (evt.clickCount == 2)
-                {
-                    onDoubleClick();
-                    evt.StopPropagation();
-                    return;
-                }
-
-                _pressed = true;
-                _dragStarted = false;
-                _pressPos = evt.position;
-                _pressStartDragOut = onStartDragOut;
-                _pressSelectTarget = selectTarget;
-            });
-        }
-
 
         private static Button CreateStarButton(FavoriteEntry entry)
         {

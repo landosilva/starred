@@ -45,7 +45,8 @@ namespace Kynesis.Starred.Editor
             // regular-scene entries are hidden, and vice versa. This matches
             // the user's mental model of "what am I currently editing".
             var stage = PrefabStageUtility.GetCurrentPrefabStage();
-            var wantsPrefab = scenePath != null && scenePath.EndsWith(".prefab");
+            var wantsPrefab = string.Equals(System.IO.Path.GetExtension(scenePath), ".prefab",
+                System.StringComparison.OrdinalIgnoreCase);
 
             if (stage != null)
             {

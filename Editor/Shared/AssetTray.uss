@@ -15,6 +15,34 @@
     background-color: rgba(80, 140, 255, 0.15);
 }
 
+.assettray-add-overlay {
+    position: absolute;
+    background-color: rgba(28, 42, 36, 0.92);
+    border-color: rgba(110, 175, 130, 0.55);
+    border-left-width: 1px;
+    border-right-width: 1px;
+    border-top-width: 1px;
+    border-bottom-width: 1px;
+    border-radius: 3px;
+    align-items: center;
+    justify-content: center;
+}
+
+.assettray-add-overlay--duplicate {
+    background-color: rgba(40, 35, 28, 0.92);
+    border-color: rgba(180, 150, 100, 0.55);
+}
+
+.assettray-add-overlay-label {
+    color: rgba(225, 235, 225, 0.7);
+    font-size: 12px;
+    -unity-font-style: italic;
+}
+
+.assettray-add-overlay--duplicate .assettray-add-overlay-label {
+    color: rgba(235, 225, 200, 0.7);
+}
+
 .assettray-empty {
     padding: 24px;
     font-size: 12px;
@@ -201,6 +229,8 @@
     border-top-width: 1px;
     border-bottom-width: 1px;
     border-radius: 3px;
+    left: 8px;
+    right: 8px;
     align-items: center;
     justify-content: center;
 }

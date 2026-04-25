@@ -74,7 +74,8 @@ namespace Kynesis.Starred.Editor
                 ? EditorGUIUtility.ObjectContent(go, go.GetType()).image
                 : EditorGUIUtility.IconContent("console.warnicon.sml").image;
 
-            var isPrefabStage = entry.ScenePath != null && entry.ScenePath.EndsWith(".prefab");
+            var isPrefabStage = string.Equals(System.IO.Path.GetExtension(entry.ScenePath), ".prefab",
+                System.StringComparison.OrdinalIgnoreCase);
             var contextIcon = EditorGUIUtility.IconContent(isPrefabStage ? "Prefab Icon" : "SceneAsset Icon").image;
             var contextName = System.IO.Path.GetFileNameWithoutExtension(entry.ScenePath);
 
