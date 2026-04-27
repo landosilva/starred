@@ -12,19 +12,12 @@ namespace Kynesis.Starred.Editor
     /// </summary>
     public class SelectionHistoryWindow : EditorWindow, IHasCustomMenu
     {
-        private const float DragStartDistance = 6f;
-
         private VisualElement _list;
         private Label _emptyState;
 
-        // Drag-out state — filled on PointerDown by a row, consumed by root-
-        // level Move / Leave handlers. Capture is not used (it fails silently
-        // during focus transitions on both Unity 2022 and 6), so move / leave
-        // events are handled at the root where they fire reliably.
-        private Vector2 _pressPos;
+        // Press state — set when a row is clicked, consumed on release to
+        // apply Selection. No drag-out: history is read-only navigation.
         private bool _pressed;
-        private bool _dragStarted;
-        private System.Action _pressStartDragOut;
         private Object _pressSelectTarget;
 
         [MenuItem("Tools/Starred/History")]
@@ -105,12 +98,11 @@ namespace Kynesis.Starred.Editor
             rootVisualElement.pickingMode = PickingMode.Position;
             rootVisualElement.focusable = true;
 
-            // Press / leave / up handled at the root so pointer capture (which
-            // fails silently during Unity's focus transition on both 2022 and
-            // 6) isn't in the path. TrickleDown on Down/Up also keeps child
+            // Press / up handled at the root so pointer capture (which fails
+            // silently during Unity's focus transition on both 2022 and 6)
+            // isn't in the path. TrickleDown on Down/Up also keeps child
             // buttons from swallowing the events.
             rootVisualElement.RegisterCallback<PointerDownEvent>(OnRootPointerDown, TrickleDown.TrickleDown);
-            rootVisualElement.RegisterCallback<MouseLeaveEvent>(OnRootMouseLeave);
             rootVisualElement.RegisterCallback<PointerUpEvent>(OnRootPointerUp, TrickleDown.TrickleDown);
 
             RegisterImguiPressFallback();
@@ -139,9 +131,6 @@ namespace Kynesis.Starred.Editor
             }
 
             _pressed = true;
-            _dragStarted = false;
-            _pressPos = evt.position;
-            _pressStartDragOut = binding.OnStartDragOut;
             _pressSelectTarget = binding.SelectTarget;
         }
 
@@ -185,9 +174,6 @@ namespace Kynesis.Starred.Editor
             }
 
             _pressed = true;
-            _dragStarted = false;
-            _pressPos = evt.mousePosition;
-            _pressStartDragOut = binding.OnStartDragOut;
             _pressSelectTarget = binding.SelectTarget;
         }
 
@@ -202,7 +188,6 @@ namespace Kynesis.Starred.Editor
         {
             public Object SelectTarget;
             public System.Action OnDoubleClick;
-            public System.Action OnStartDragOut;
         }
 
         private static RowBinding BindFor(FavoriteEntry entry)
@@ -216,32 +201,21 @@ namespace Kynesis.Starred.Editor
                 {
                     SelectTarget = asset,
                     OnDoubleClick = () => AssetDatabase.OpenAsset(asset),
-                    OnStartDragOut = () => AssetTrayRow.StartDragOutAsset(asset),
                 };
             }
 
             if (entry.IsSceneObject)
             {
-                var go = SceneObjectResolver.Find(entry.ScenePath, entry.HierarchyPath);
+                var go = SceneObjectResolver.Find(entry);
                 if (go == null) return null;
                 return new RowBinding
                 {
                     SelectTarget = go,
                     OnDoubleClick = () => { SelectionHistoryTracker.Select(go); SceneView.FrameLastActiveSceneView(); },
-                    OnStartDragOut = () => AssetTrayRow.StartDragOutObject(go),
                 };
             }
 
             return null;
-        }
-
-        private void OnRootMouseLeave(MouseLeaveEvent evt)
-        {
-            if (!_pressed || _dragStarted || _pressStartDragOut == null) return;
-            if ((evt.mousePosition - _pressPos).sqrMagnitude < DragStartDistance * DragStartDistance) return;
-
-            _dragStarted = true;
-            _pressStartDragOut();
         }
 
         private void OnRootPointerUp(PointerUpEvent evt)
@@ -252,10 +226,9 @@ namespace Kynesis.Starred.Editor
             if ((evt.pressedButtons & 1) != 0) return;
             if (evt.button != 0) return;
 
-            // Release without drag — select now rather than on press, so
-            // Selection.selectionChanged doesn't repaint mid-gesture.
-            if (!_dragStarted && _pressSelectTarget != null)
-                SelectionHistoryTracker.Select(_pressSelectTarget);
+            // Select on release — Selection.selectionChanged on press would
+            // repaint mid-click and feel jumpy.
+            if (_pressSelectTarget != null) SelectionHistoryTracker.Select(_pressSelectTarget);
 
             ResetPress();
         }
@@ -263,8 +236,6 @@ namespace Kynesis.Starred.Editor
         private void ResetPress()
         {
             _pressed = false;
-            _dragStarted = false;
-            _pressStartDragOut = null;
             _pressSelectTarget = null;
         }
 
@@ -377,14 +348,17 @@ namespace Kynesis.Starred.Editor
         {
             var selectedGuid = AssetTrayRow.GetCurrentSelectionGuid();
             var selectedGo   = Selection.activeGameObject;
+            // Compute the selection's GlobalObjectId once — GetGlobalObjectIdSlow
+            // is a slow call (per its name), and the highlight predicate runs
+            // for every visible row.
+            var selectedGoId = selectedGo != null ? SceneObjectResolver.GetGlobalObjectId(selectedGo) : null;
 
             AssetTrayRow.ApplyCurrentHighlight(_list, data =>
             {
                 if (data is not FavoriteEntry entry) return false;
                 if (entry.IsAsset) return entry.Guid == selectedGuid;
-                if (entry.IsSceneObject && selectedGo != null)
-                    return SceneObjectResolver.GetScenePath(selectedGo) == entry.ScenePath
-                        && SceneObjectResolver.GetHierarchyPath(selectedGo) == entry.HierarchyPath;
+                if (entry.IsSceneObject && !string.IsNullOrEmpty(selectedGoId))
+                    return entry.GlobalObjectId == selectedGoId;
                 return false;
             });
         }

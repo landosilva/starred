@@ -55,10 +55,9 @@ namespace Kynesis.Starred.Editor
 
             if (active is GameObject go)
             {
-                var scenePath = SceneObjectResolver.GetScenePath(go);
-                if (string.IsNullOrEmpty(scenePath)) return; // unsaved scene — skip
-                SelectionHistoryPreferences.Record(
-                    FavoriteEntry.ForSceneObject(scenePath, SceneObjectResolver.GetHierarchyPath(go)));
+                var entry = SceneObjectResolver.BuildEntry(go);
+                if (entry == null || string.IsNullOrEmpty(entry.ScenePath)) return; // unsaved scene — skip
+                SelectionHistoryPreferences.Record(entry);
             }
         }
     }

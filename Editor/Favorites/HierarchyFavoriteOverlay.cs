@@ -36,18 +36,16 @@ namespace Kynesis.Starred.Editor
 
             if (obj is not GameObject go) return;
 
-            var scenePath = SceneObjectResolver.GetScenePath(go);
-            if (string.IsNullOrEmpty(scenePath)) return;
-
-            var hierarchyPath = SceneObjectResolver.GetHierarchyPath(go);
-            if (!FavoriteAssetsPreferences.ContainsSceneObject(scenePath, hierarchyPath)) return;
+            var globalObjectId = SceneObjectResolver.GetGlobalObjectId(go);
+            if (string.IsNullOrEmpty(globalObjectId)) return;
+            if (!FavoriteAssetsPreferences.ContainsSceneObject(globalObjectId)) return;
 
             var starRect = FavoriteStarDrawer.Draw(selectionRect);
 
             var e = Event.current;
             if (e.type == EventType.MouseDown && e.button == 0 && starRect.Contains(e.mousePosition))
             {
-                FavoriteAssetsPreferences.RemoveSceneObject(scenePath, hierarchyPath);
+                FavoriteAssetsPreferences.RemoveSceneObject(globalObjectId);
                 e.Use();
             }
         }

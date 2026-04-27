@@ -67,7 +67,7 @@ namespace Kynesis.Starred.Editor
             go = null;
             if (!SceneObjectResolver.IsSceneAvailable(entry.ScenePath)) return null;
 
-            go = SceneObjectResolver.Find(entry.ScenePath, entry.HierarchyPath);
+            go = SceneObjectResolver.Find(entry);
             var objectName = go != null ? go.name : LastSegment(entry.HierarchyPath);
             var tooltip    = $"{entry.ScenePath} → {entry.HierarchyPath}";
             var objectIcon = go != null
@@ -83,6 +83,7 @@ namespace Kynesis.Starred.Editor
             row.AddToClassList(Classes.Row);
             row.userData = entry;
             if (go == null) row.AddToClassList(Classes.Missing);
+            else if (!go.activeInHierarchy) row.AddToClassList("assettray-row--inactive");
 
             var ctxIcon = new Image { image = contextIcon, scaleMode = ScaleMode.ScaleToFit };
             ctxIcon.AddToClassList(Classes.Icon);
@@ -132,6 +133,7 @@ namespace Kynesis.Starred.Editor
             return btn;
         }
 
+
         public static void AppendAssetContextMenu(DropdownMenu menu, UnityEngine.Object asset, string guid, string path)
         {
             menu.AppendAction("Show in Project", _ => { EditorGUIUtility.PingObject(asset); Selection.activeObject = asset; });
@@ -160,20 +162,5 @@ namespace Kynesis.Starred.Editor
             }
         }
 
-        public static void StartDragOutAsset(UnityEngine.Object asset)
-        {
-            DragAndDrop.PrepareStartDrag();
-            DragAndDrop.objectReferences = new[] { asset };
-            DragAndDrop.paths = new[] { AssetDatabase.GetAssetPath(asset) };
-            DragAndDrop.StartDrag(asset.name);
-        }
-
-        public static void StartDragOutObject(UnityEngine.Object obj)
-        {
-            DragAndDrop.PrepareStartDrag();
-            DragAndDrop.objectReferences = new[] { obj };
-            DragAndDrop.paths = Array.Empty<string>();
-            DragAndDrop.StartDrag(obj.name);
-        }
     }
 }

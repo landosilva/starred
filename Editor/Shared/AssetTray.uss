@@ -57,10 +57,17 @@
     padding: 4px 6px;
     margin: 1px 0;
     border-radius: 3px;
+    transition-property: translate;
+    transition-duration: 0.14s;
+    transition-timing-function: ease-out;
 }
 
 .assettray-row:hover {
     background-color: rgba(255, 255, 255, 0.06);
+}
+
+.assettray-overlay-active .assettray-row:hover {
+    background-color: rgba(0, 0, 0, 0);
 }
 
 .assettray-row--current {
@@ -73,7 +80,29 @@
 }
 
 .assettray-row--dragging {
-    opacity: 0.5;
+    /* Original row hidden via visibility — the ghost element is what the
+       user sees following the cursor. */
+    visibility: hidden;
+}
+
+/* While a reorder is in progress, no other row should react to hover —
+   the ghost owns the cursor's visual focus. */
+.assettray-with-drag .assettray-row:hover {
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.assettray-drag-ghost {
+    flex-direction: row;
+    align-items: center;
+    background-color: rgb(56, 58, 65);
+    border-color: rgba(120, 140, 180, 0.55);
+    border-left-width: 1px;
+    border-right-width: 1px;
+    border-top-width: 1px;
+    border-bottom-width: 1px;
+    overflow: hidden;
+    /* Ghost tracks the cursor 1:1; no transition or it lags behind. */
+    transition-duration: 0s;
 }
 
 .assettray-row-icon {
@@ -142,6 +171,19 @@
     font-size: 14px;
 }
 
+/* Mirror Unity's Hierarchy disabled-object treatment so a deactivated
+   scene GameObject reads as inactive in the favorites tray too. */
+.assettray-row--inactive .assettray-row-label,
+.assettray-row--inactive .assettray-row-context-label,
+.assettray-row--inactive .assettray-row-context-separator {
+    color: rgba(150, 150, 150, 0.55);
+}
+
+.assettray-row--inactive .assettray-row-icon,
+.assettray-row--inactive .assettray-row-context-icon {
+    opacity: 0.55;
+}
+
 .assettray-row-action--star:hover {
     background-color: rgba(255, 255, 255, 0.12);
     color: rgb(240, 240, 240);
@@ -159,39 +201,6 @@
     height: 2px;
     background-color: rgb(80, 140, 255);
     border-radius: 1px;
-}
-
-.assettray-insert-marker--forbidden {
-    background-color: rgb(210, 90, 80);
-}
-
-.assettray-drag-ghost {
-    position: absolute;
-    flex-direction: row;
-    align-items: center;
-    background-color: rgba(40, 40, 48, 0.9);
-    border-color: rgba(120, 140, 170, 0.6);
-    border-left-width: 1px;
-    border-right-width: 1px;
-    border-top-width: 1px;
-    border-bottom-width: 1px;
-    border-radius: 3px;
-    padding-left: 4px;
-    padding-right: 6px;
-    padding-top: 2px;
-    padding-bottom: 2px;
-    opacity: 0.92;
-}
-
-.assettray-drag-ghost-icon {
-    width: 14px;
-    height: 14px;
-    margin-right: 4px;
-}
-
-.assettray-drag-ghost-label {
-    color: rgb(230, 230, 235);
-    font-size: 11px;
 }
 
 .assettray-row-context-icon {
@@ -219,25 +228,5 @@
     margin-right: 8px;
     margin-top: 4px;
     margin-bottom: 4px;
-}
-
-.assettray-forbidden-overlay {
-    background-color: rgba(28, 32, 40, 0.92);
-    border-color: rgba(110, 140, 180, 0.5);
-    border-left-width: 1px;
-    border-right-width: 1px;
-    border-top-width: 1px;
-    border-bottom-width: 1px;
-    border-radius: 3px;
-    left: 8px;
-    right: 8px;
-    align-items: center;
-    justify-content: center;
-}
-
-.assettray-forbidden-overlay-label {
-    color: rgba(200, 215, 230, 0.5);
-    font-size: 11px;
-    -unity-font-style: italic;
 }
 

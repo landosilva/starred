@@ -7,16 +7,31 @@ namespace Kynesis.Starred.Editor
     using UnityEngine.SceneManagement;
 
     /// <summary>
-    /// Resolves scene/prefab-stage GameObjects by (scenePath, hierarchyPath).
-    /// ScenePath points to a <c>.unity</c> file for regular scenes, or to a
-    /// <c>.prefab</c> file for objects favorited while inside a Prefab Stage.
+    /// Resolves scene / prefab-stage GameObjects for favorite entries.
+    /// Identity is keyed on Unity's <see cref="GlobalObjectId"/> so favorites
+    /// survive rename and reparent; <see cref="FavoriteEntry.HierarchyPath"/>
+    /// is a fallback when the ID can't be resolved (and the source of the
+    /// row's display label).
     /// </summary>
     internal static class SceneObjectResolver
     {
-        public static GameObject Find(string scenePath, string hierarchyPath)
+        public static GameObject Find(FavoriteEntry entry)
         {
-            var scene = FindLoadedScene(scenePath);
-            return scene.IsValid() && scene.isLoaded ? FindInScene(scene, hierarchyPath) : null;
+            if (entry == null || !entry.IsSceneObject) return null;
+            if (!IsSceneAvailable(entry.ScenePath)) return null;
+
+            // Primary: GlobalObjectId. Stable across rename / reparent / scene
+            // reload (for saved scenes).
+            if (GlobalObjectId.TryParse(entry.GlobalObjectId, out var id))
+            {
+                var obj = GlobalObjectId.GlobalObjectIdentifierToObjectSlow(id);
+                if (obj is GameObject viaId) return viaId;
+            }
+
+            // Fallback: walk the hierarchy by path. Useful for transient or
+            // unsaved scenes where the GlobalObjectId might not have stuck.
+            var scene = FindLoadedScene(entry.ScenePath);
+            return scene.IsValid() && scene.isLoaded ? FindInScene(scene, entry.HierarchyPath) : null;
         }
 
         public static bool IsSceneAvailable(string scenePath)
@@ -24,6 +39,9 @@ namespace Kynesis.Starred.Editor
             var scene = FindLoadedScene(scenePath);
             return scene.IsValid() && scene.isLoaded;
         }
+
+        public static string GetGlobalObjectId(GameObject go) =>
+            go == null ? string.Empty : GlobalObjectId.GetGlobalObjectIdSlow(go).ToString();
 
         public static string GetScenePath(GameObject go)
         {
@@ -37,6 +55,15 @@ namespace Kynesis.Starred.Editor
             for (var t = go.transform; t != null; t = t.parent) parts.Add(t.name);
             parts.Reverse();
             return string.Join("/", parts);
+        }
+
+        public static FavoriteEntry BuildEntry(GameObject go)
+        {
+            if (go == null) return null;
+            return FavoriteEntry.ForSceneObject(
+                GetGlobalObjectId(go),
+                GetScenePath(go),
+                GetHierarchyPath(go));
         }
 
         private static Scene FindLoadedScene(string scenePath)

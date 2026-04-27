@@ -26,14 +26,14 @@ namespace Kynesis.Starred.Editor
         public static bool Contains(string guid) =>
             !string.IsNullOrEmpty(guid) && _assetGuids.Contains(guid);
 
-        public static bool ContainsSceneObject(string scenePath, string hierarchyPath) =>
-            _lookup.Contains(FavoriteEntry.ForSceneObject(scenePath, hierarchyPath).LookupKey);
+        public static bool ContainsSceneObject(string globalObjectId) =>
+            !string.IsNullOrEmpty(globalObjectId) && _lookup.Contains($"s:{globalObjectId}");
 
         public static bool Contains(FavoriteEntry entry)
         {
             if (entry == null) return false;
             if (entry.IsAsset) return Contains(entry.Guid);
-            if (entry.IsSceneObject) return ContainsSceneObject(entry.ScenePath, entry.HierarchyPath);
+            if (entry.IsSceneObject) return ContainsSceneObject(entry.GlobalObjectId);
             return false;
         }
 
@@ -53,12 +53,12 @@ namespace Kynesis.Starred.Editor
             if (Contains(entry))
             {
                 if (entry.IsAsset) Remove(entry.Guid);
-                else RemoveSceneObject(entry.ScenePath, entry.HierarchyPath);
+                else RemoveSceneObject(entry.GlobalObjectId);
             }
             else
             {
                 if (entry.IsAsset) Add(entry.Guid);
-                else AddSceneObject(entry.ScenePath, entry.HierarchyPath);
+                else if (TryAdd(entry)) Commit();
             }
         }
 
@@ -67,11 +67,6 @@ namespace Kynesis.Starred.Editor
         public static void Add(string guid)
         {
             if (TryAdd(FavoriteEntry.ForAsset(guid))) Commit();
-        }
-
-        public static void AddSceneObject(string scenePath, string hierarchyPath)
-        {
-            if (TryAdd(FavoriteEntry.ForSceneObject(scenePath, hierarchyPath))) Commit();
         }
 
         public static void AddRange(IEnumerable<FavoriteEntry> entries)
@@ -104,9 +99,10 @@ namespace Kynesis.Starred.Editor
             Commit();
         }
 
-        public static void RemoveSceneObject(string scenePath, string hierarchyPath)
+        public static void RemoveSceneObject(string globalObjectId)
         {
-            var key = FavoriteEntry.ForSceneObject(scenePath, hierarchyPath).LookupKey;
+            if (string.IsNullOrEmpty(globalObjectId)) return;
+            var key = $"s:{globalObjectId}";
             for (var i = 0; i < _entries.Count; i++)
             {
                 if (_entries[i].LookupKey == key)

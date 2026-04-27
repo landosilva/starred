@@ -5,6 +5,30 @@ All notable changes to this package are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.5] - 2026-04-27
+
+### Added
+
+- **Scene favorites survive rename and reparent.** Scene / prefab-stage entries are now keyed on Unity's `GlobalObjectId` instead of a hierarchy-path string, so renaming a GameObject or moving it under a different parent no longer breaks the favorite reference.
+- **Smooth drop animation.** When you release a reorder, a ghost row slides from the cursor to the target row's resting position — same animation whether the drop changed position or not.
+- **Inactive-object dimming in the tray.** Scene GameObjects that are deactivated in the Hierarchy now render dimmed in the Favorites and History rows (and on the drag ghost), matching Unity's own Hierarchy treatment.
+
+### Changed
+
+- **Drag-out from Favorites removed.** Favorited assets are no longer draggable out of the window — the lens button + double-click cover navigation, and the right-click menu covers everything else. (Keeps Starred scoped to its own window and avoids the focus-transition edge cases native drag-out kept stirring up.)
+- **Row buttons reduced to `[lens] [×]`.** "Properties…" moved to the right-click context menu — the row is less busy at rest, and the menu is the more natural home for it.
+- **Reorder cleanup consolidated.** A single `EndGhostDrop` is the canonical "reorder finished" path — restores the hidden row, cursor, hover suppression, neighbor translates, and tooltips. No-op drops and committed drops now run through identical cleanup.
+- **Old path-based scene favorites are silently dropped on first load** of 0.1.5. No migration: the old hierarchy-path keys are no longer addressable, so re-add the entries you want. (Asset favorites are unaffected.)
+
+### Fixed
+
+- **Stranded-invisible row** after a drop animation. The dragged row's `visibility: hidden` (set when the ghost lifted off) was only being cleared by the inline-style restore — the `assettray-row--dragging` USS class kept the row hidden via CSS. Both are cleared on landing now.
+- **Hover suppression leaking past a drop.** The `assettray-with-drag` class and `MoveArrow` cursor stuck around after committed drops because the cleanup only ran on the no-op path. Both paths share the same teardown now.
+- **Snap-back instead of slide-back on real-position drops.** `Move` → `Commit` → `Rebuild` was hiding the ghost before the slide could start. Rebuild now rides through with the ghost intact while a commit is in flight.
+- **Click during drop animation strands the row.** A fresh press while the ghost was sliding home would kill the ghost without restoring the underlying row's visibility. PointerDown / IMGUI press are now suppressed until the ghost lands.
+- **Stale press cancelling its own animation.** A no-op Move left `_pressedEntry` set, which the next `PointerMove` (button no longer held) treated as a stale press and cancelled mid-animation. Press fields are cleared explicitly after `Move`.
+- **Idle Editor freezing the animation.** The Editor doesn't repaint when idle, which stalled the CSS transition mid-flight if the user wasn't moving the mouse. Hooked `EditorApplication.update` for the duration of the slide.
+
 ## [0.1.4] - 2026-04-25
 
 ### Added
