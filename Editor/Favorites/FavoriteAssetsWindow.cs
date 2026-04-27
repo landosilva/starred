@@ -18,7 +18,6 @@ namespace Kynesis.Starred.Editor
 
         private VisualElement _list;
         private Label _emptyState;
-        private VisualElement _insertMarker;
         private VisualElement _addOverlay;
         private Label _addOverlayLabel;
         private VisualElement _dragGhost;
@@ -158,13 +157,6 @@ namespace Kynesis.Starred.Editor
 
             _list       = rootVisualElement.Q<VisualElement>("list");
             _emptyState = rootVisualElement.Q<Label>("empty-state");
-
-            _insertMarker = new VisualElement();
-            _insertMarker.AddToClassList("assettray-insert-marker");
-            _insertMarker.style.position = Position.Absolute;
-            _insertMarker.style.display = DisplayStyle.None;
-            _insertMarker.pickingMode = PickingMode.Ignore;
-            _list.Add(_insertMarker);
 
             _addOverlay = new VisualElement();
             _addOverlay.AddToClassList("assettray-add-overlay");
@@ -517,10 +509,6 @@ namespace Kynesis.Starred.Editor
             }
 
             _emptyState.style.display = renderedCount == 0 ? DisplayStyle.Flex : DisplayStyle.None;
-
-            // Re-attach the insert marker that was cleared with the list.
-            _list.Add(_insertMarker);
-            _insertMarker.style.display = DisplayStyle.None;
 
             ApplyCurrentHighlight();
         }
@@ -926,7 +914,6 @@ namespace Kynesis.Starred.Editor
             RestoreRowTooltips();
 
             _dropIndex = -1;
-            if (_insertMarker != null) _insertMarker.style.display = DisplayStyle.None;
 
             _dragState = DragState.Idle;
         }
@@ -945,7 +932,6 @@ namespace Kynesis.Starred.Editor
             // calling ResetReorderInternals.
             _dragState = DragState.Idle;
             _dropIndex = -1;
-            if (_insertMarker != null) _insertMarker.style.display = DisplayStyle.None;
             if (rootVisualElement != null)
             {
                 rootVisualElement.style.cursor = new StyleCursor(StyleKeyword.Null);
@@ -981,10 +967,6 @@ namespace Kynesis.Starred.Editor
             var localMouseY = _list.WorldToLocal(mousePosition).y;
             ApplyReorderShift(rows, _pressedEntry, visibleIndex);
             PositionDragGhost(rows, _pressedEntry, localMouseY);
-
-            // Insert marker is hidden during animated reorder — the row gap
-            // itself is the affordance now.
-            _insertMarker.style.display = DisplayStyle.None;
         }
 
         // Slides every row that sits between the dragged entry and the drop
@@ -1098,11 +1080,11 @@ private static int ClampToBlock(FavoriteEntry entry, int visibleIndex, List<Visu
         // must consume the result before the next CollectRows() call.
         private List<VisualElement> CollectRows()
         {
-            // Rows have a FavoriteEntry in userData; separators and the insert
-            // marker don't, so filtering on userData picks real rows only.
+            // Rows have a FavoriteEntry in userData; separators don't, so
+            // filtering on userData picks real rows only.
             _rowBuffer.Clear();
             foreach (var child in _list.Children())
-                if (child != _insertMarker && child.userData != null) _rowBuffer.Add(child);
+                if (child.userData != null) _rowBuffer.Add(child);
             return _rowBuffer;
         }
 

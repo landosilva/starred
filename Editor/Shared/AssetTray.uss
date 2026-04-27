@@ -197,12 +197,6 @@
     color: rgb(255, 220, 110);
 }
 
-.assettray-insert-marker {
-    height: 2px;
-    background-color: rgb(80, 140, 255);
-    border-radius: 1px;
-}
-
 .assettray-row-context-icon {
     opacity: 0.7;
 }
