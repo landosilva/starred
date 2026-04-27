@@ -793,6 +793,19 @@ namespace Kynesis.Starred.Editor
                 return;
             }
 
+            // Real-Move case: Rebuild destroyed the old (hidden) row and
+            // created a fresh one at the destination — fresh means visible.
+            // Without hiding it now, the destination row would render
+            // underneath the still-flying ghost and the user would see the
+            // row "arrive early". Hide it and rewire _ghostHiddenRow so
+            // EndGhostDrop restores the right element on landing.
+            if (newRow != _ghostHiddenRow)
+            {
+                newRow.AddToClassList("assettray-row--dragging");
+                newRow.style.visibility = Visibility.Hidden;
+                _ghostHiddenRow = newRow;
+            }
+
             // Layout for fresh rows isn't computed until the next layout
             // pass — wait for it before reading position.
             if (newRow.layout.height > 0f) BeginGhostSlide(newRow);
