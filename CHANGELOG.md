@@ -5,6 +5,16 @@ All notable changes to this package are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.6] - 2026-04-27
+
+### Fixed
+
+- **Destination row no longer "arrives early" during the drop slide.** On real-position drops, `Move → Commit → Rebuild` was creating a fresh (visible) row at the destination, so the row rendered at its final spot while the ghost was still mid-flight toward it. The newly-rebuilt row is now hidden until the ghost lands. No-op drops and committed drops render identically — empty slot during flight, row appears as the ghost arrives.
+
+### Changed
+
+- Internal: removed dead `_insertMarker` visual element. The thin blue insert line was replaced by the row-shift / gap-opening visual in 0.1.4 but the element itself was still being created, re-attached on every Rebuild, and reset in three cleanup paths.
+
 ## [0.1.5] - 2026-04-27
 
 ### Added
