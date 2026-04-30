@@ -11,7 +11,7 @@
 [![Release](https://img.shields.io/github/v/tag/landosilva/starred?label=release&color=gold)](https://github.com/landosilva/starred/releases)
 [![Kynesis](https://img.shields.io/badge/Kynesis-★-black)](https://github.com/landosilva)
 
-<img src="Documentation~/Images/hero-a.gif" alt="Favorites demo" width="420" /> <img src="Documentation~/Images/hero-b.gif" alt="History demo" width="420" />
+<img src="Documentation~/Images/hero-a.gif" alt="Favorites demo" width="380" /> <img src="Documentation~/Images/hero-b.gif" alt="History demo" width="380" />
 
 </div>
 
@@ -66,7 +66,7 @@ Auto-populated, most-recent-first. Re-selecting bumps to the top. Each row has a
 Favorited items get a ★ overlay in the **Project** and **Hierarchy** windows. Click the overlay to unfavorite directly.
 
 <div align="center">
-<img src="Documentation~/Images/overlays-a.png" alt="Hierarchy overlay" width="420" /> <img src="Documentation~/Images/overlays-b.png" alt="Project overlay" width="420" />
+<img src="Documentation~/Images/overlays-a.png" alt="Hierarchy overlay" width="380" /> <img src="Documentation~/Images/overlays-b.png" alt="Project overlay" width="380" />
 </div>
 
 Both overlays toggle independently in Preferences.
