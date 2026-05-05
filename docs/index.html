@@ -1,0 +1,555 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Starred — Favorites & Selection History for the Unity Editor</title>
+<meta name="description" content="A compact favorites tray plus selection history for the Unity Editor. Star assets and scene objects, jump back to recently-used items, see at-a-glance which things are starred." />
+
+<link rel="icon" type="image/png" href="images/icon.png" />
+<link rel="apple-touch-icon" href="images/icon.png" />
+
+<meta property="og:type" content="website" />
+<meta property="og:title" content="Starred — Favorites & Selection History for Unity" />
+<meta property="og:description" content="A compact favorites tray plus selection history for the Unity Editor." />
+<meta property="og:image" content="images/social.png" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Starred — Favorites & Selection History for Unity" />
+<meta name="twitter:description" content="A compact favorites tray plus selection history for the Unity Editor." />
+<meta name="twitter:image" content="images/social.png" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+<style>
+  :root {
+    --bg: #0a0a0b;
+    --bg-2: #111114;
+    --panel: #15151a;
+    --panel-2: #1c1c22;
+    --line: #26262e;
+    --text: #e9e9ee;
+    --muted: #9a9aa6;
+    --gold: #ffd400;
+    --gold-soft: rgba(255, 212, 0, 0.14);
+    --gold-glow: rgba(255, 212, 0, 0.35);
+    --radius: 14px;
+    --maxw: 1080px;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-image:
+      radial-gradient(1200px 600px at 50% -100px, rgba(255, 212, 0, 0.08), transparent 60%),
+      radial-gradient(800px 500px at 90% 10%, rgba(255, 212, 0, 0.04), transparent 60%);
+    background-attachment: fixed;
+  }
+
+  a { color: var(--gold); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 24px; }
+
+  /* Nav */
+  .nav {
+    position: sticky; top: 0; z-index: 50;
+    backdrop-filter: blur(10px);
+    background: rgba(10, 10, 11, 0.72);
+    border-bottom: 1px solid var(--line);
+  }
+  .nav-inner {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 24px;
+    max-width: var(--maxw); margin: 0 auto;
+  }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; letter-spacing: -0.01em; }
+  .brand img { width: 26px; height: 26px; border-radius: 6px; }
+  .brand span { color: var(--text); }
+  .nav-links { display: flex; gap: 22px; align-items: center; }
+  .nav-links a { color: var(--muted); font-size: 14px; font-weight: 500; }
+  .nav-links a:hover { color: var(--text); text-decoration: none; }
+  .nav-cta {
+    background: var(--gold); color: #111 !important;
+    padding: 8px 14px; border-radius: 8px;
+    font-weight: 600; font-size: 14px;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .nav-cta:hover { text-decoration: none; transform: translateY(-1px); box-shadow: 0 6px 20px var(--gold-glow); }
+
+  /* Hero */
+  .hero { padding: 64px 0 40px; text-align: center; }
+  .hero-banner {
+    width: 100%; max-width: 880px;
+    border-radius: var(--radius);
+    border: 1px solid var(--line);
+    box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+  }
+  .tagline {
+    margin: 28px auto 0;
+    font-size: clamp(20px, 3vw, 26px);
+    font-weight: 500;
+    color: var(--text);
+    max-width: 720px;
+    line-height: 1.4;
+  }
+  .sub {
+    margin: 14px auto 0;
+    color: var(--muted);
+    max-width: 620px;
+    font-size: 16px;
+  }
+  .badges {
+    display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;
+    margin: 22px 0 0;
+  }
+  .badges img { height: 22px; }
+  .cta-row {
+    display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;
+    margin-top: 28px;
+  }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 15px;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    border: 1px solid transparent;
+  }
+  .btn-primary { background: var(--gold); color: #111 !important; }
+  .btn-primary:hover { text-decoration: none; transform: translateY(-1px); box-shadow: 0 8px 24px var(--gold-glow); }
+  .btn-ghost { background: var(--panel); color: var(--text) !important; border-color: var(--line); }
+  .btn-ghost:hover { text-decoration: none; background: var(--panel-2); border-color: #353540; }
+
+  .hero-pair {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 56px auto 0;
+    max-width: 880px;
+  }
+  .hero-pair img {
+    width: 100%; display: block;
+    border-radius: var(--radius);
+    border: 1px solid var(--line);
+    background: var(--panel);
+  }
+
+  /* Sections */
+  section { padding: 80px 0; }
+  section + section { border-top: 1px solid var(--line); }
+  .eyebrow {
+    color: var(--gold); font-weight: 600; font-size: 13px;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    margin: 0 0 10px;
+  }
+  h2 {
+    margin: 0 0 14px;
+    font-size: clamp(26px, 3.5vw, 36px);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+  }
+  .lede { color: var(--muted); max-width: 640px; font-size: 17px; }
+
+  /* Feature blocks */
+  .feature {
+    display: grid; grid-template-columns: 1.1fr 1fr;
+    gap: 56px; align-items: center;
+  }
+  .feature.reverse { grid-template-columns: 1fr 1.1fr; }
+  .feature.reverse .feature-text { order: 2; }
+  .feature-media img {
+    width: 100%; display: block;
+    border-radius: var(--radius);
+    border: 1px solid var(--line);
+    background: var(--panel);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  }
+  .feature ul {
+    margin: 22px 0 0; padding: 0; list-style: none;
+  }
+  .feature ul li {
+    position: relative; padding-left: 22px; margin-bottom: 10px;
+    color: var(--text); line-height: 1.55;
+  }
+  .feature ul li::before {
+    content: '★';
+    color: var(--gold);
+    position: absolute; left: 0; top: 0;
+    font-size: 13px;
+  }
+  .menu-path {
+    display: inline-block;
+    font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+    font-size: 13px;
+    color: var(--muted);
+    background: var(--panel);
+    border: 1px solid var(--line);
+    padding: 4px 10px;
+    border-radius: 6px;
+    margin-bottom: 18px;
+  }
+
+  /* Overlay pair */
+  .overlays { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 28px; }
+  .overlays img { width: 100%; display: block; border-radius: var(--radius); border: 1px solid var(--line); }
+
+  /* Install */
+  .install-card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 28px;
+    margin-top: 28px;
+  }
+  .install-step { margin: 0 0 18px; }
+  .install-step:last-child { margin: 0; }
+  .install-step h3 {
+    font-size: 14px; font-weight: 600; margin: 0 0 10px;
+    color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em;
+  }
+  .install-step p { margin: 0 0 12px; }
+  .code-row {
+    display: flex; align-items: stretch; gap: 0;
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .code-row code {
+    flex: 1; padding: 14px 16px;
+    font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+    font-size: 14px;
+    color: var(--text);
+    overflow-x: auto; white-space: nowrap;
+  }
+  .copy-btn {
+    background: transparent;
+    border: none; border-left: 1px solid var(--line);
+    color: var(--muted);
+    padding: 0 16px;
+    font-family: inherit; font-size: 13px; font-weight: 600;
+    cursor: pointer;
+    transition: color 0.15s ease, background 0.15s ease;
+  }
+  .copy-btn:hover { color: var(--gold); background: rgba(255,212,0,0.04); }
+  .copy-btn.copied { color: var(--gold); }
+
+  /* Compatibility table */
+  .compat {
+    display: grid; grid-template-columns: 1fr 1fr 1fr;
+    gap: 14px; margin-top: 28px;
+  }
+  .compat-card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 22px;
+  }
+  .compat-card .v {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 18px; font-weight: 600; color: var(--text);
+  }
+  .compat-card .s {
+    font-size: 13px; color: var(--muted); margin-top: 4px;
+  }
+  .compat-card.ok { border-color: rgba(255,212,0,0.25); }
+  .compat-card.ok .s { color: var(--gold); }
+
+  /* Data table */
+  .data-table {
+    margin-top: 24px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .data-row {
+    display: grid; grid-template-columns: 1fr 1.4fr 1.6fr;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--line);
+    font-size: 14px;
+  }
+  .data-row:last-child { border-bottom: none; }
+  .data-row.head { background: var(--panel); color: var(--muted); font-weight: 600; text-transform: uppercase; font-size: 12px; letter-spacing: 0.06em; }
+  .data-row code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--gold);
+    background: rgba(255,212,0,0.06);
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+
+  /* Footer */
+  footer {
+    border-top: 1px solid var(--line);
+    padding: 40px 0 56px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 14px;
+  }
+  footer .kynesis {
+    display: inline-flex; align-items: center; gap: 6px;
+    margin-top: 8px;
+    color: var(--muted);
+  }
+  footer .kynesis strong { color: var(--text); font-weight: 600; }
+
+  /* Responsive */
+  @media (max-width: 760px) {
+    .nav-links a:not(.nav-cta) { display: none; }
+    .feature, .feature.reverse { grid-template-columns: 1fr; gap: 28px; }
+    .feature.reverse .feature-text { order: 0; }
+    .hero-pair { grid-template-columns: 1fr; }
+    .compat { grid-template-columns: 1fr; }
+    .data-row { grid-template-columns: 1fr; gap: 4px; padding: 14px 16px; }
+    .data-row.head { display: none; }
+    section { padding: 56px 0; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="#top" class="brand">
+      <img src="images/icon.png" alt="" />
+      <span>Starred</span>
+    </a>
+    <div class="nav-links">
+      <a href="#favorites">Favorites</a>
+      <a href="#history">History</a>
+      <a href="#install">Install</a>
+      <a href="https://github.com/landosilva/starred" class="nav-cta">GitHub →</a>
+    </div>
+  </div>
+</nav>
+
+<a id="top"></a>
+
+<header class="hero wrap">
+  <img class="hero-banner" src="images/banner.png" alt="Starred — Favorites & Selection History for the Unity Editor" />
+
+  <p class="tagline">Favorites tray + selection history for the Unity Editor.</p>
+  <p class="sub">Star the assets and scene objects you live in. Jump back to anything you just touched. See at a glance what's starred — right inside the Project window and Hierarchy.</p>
+
+  <div class="badges">
+    <img src="https://img.shields.io/badge/Unity-2022.3%2B-000?logo=unity" alt="Unity 2022.3+" />
+    <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="MIT License" />
+    <img src="https://img.shields.io/github/v/tag/landosilva/starred?label=release&color=gold" alt="Latest release" />
+  </div>
+
+  <div class="cta-row">
+    <a href="#install" class="btn btn-primary">Install via UPM</a>
+    <a href="https://github.com/landosilva/starred" class="btn btn-ghost">View on GitHub</a>
+  </div>
+
+  <div class="hero-pair">
+    <img src="images/hero-a.gif" alt="Favorites demo" />
+    <img src="images/hero-b.gif" alt="Selection history demo" />
+  </div>
+</header>
+
+<section id="favorites">
+  <div class="wrap feature">
+    <div class="feature-text">
+      <p class="eyebrow">Favorites</p>
+      <h2>A tray for the things you actually use.</h2>
+      <span class="menu-path">Tools → Starred → Favorites</span>
+      <p class="lede">Drop in project assets or scene GameObjects. Click to select, double-click to open or frame, drag out onto Inspector fields.</p>
+      <ul>
+        <li>Flat ordered list — no folders, no nesting. It stays a tray.</li>
+        <li>Reorder by drag. Lens icon to ping in Project or Hierarchy.</li>
+        <li>Scene-bound entries keyed by scene + hierarchy path — only visible when their scene is loaded.</li>
+        <li>Missing or renamed objects show red so you can clean them up.</li>
+      </ul>
+    </div>
+    <div class="feature-media">
+      <img src="images/favorites.gif" alt="Favorites tray" />
+    </div>
+  </div>
+</section>
+
+<section id="history">
+  <div class="wrap feature reverse">
+    <div class="feature-text">
+      <p class="eyebrow">Selection History</p>
+      <h2>Back to what you just had.</h2>
+      <span class="menu-path">Tools → Starred → History</span>
+      <p class="lede">Auto-populated, most-recent-first. Re-selecting bumps to the top. Each row has a ★ button to promote straight to Favorites.</p>
+      <ul>
+        <li>Tracks both project assets and scene / prefab-stage GameObjects.</li>
+        <li>Single-click inspects. Lens pings. Double-click opens or frames.</li>
+        <li>Size caps configurable: 4 / 8 / 16 / 32.</li>
+      </ul>
+    </div>
+    <div class="feature-media">
+      <img src="images/history.gif" alt="Selection history" />
+    </div>
+  </div>
+</section>
+
+<section id="overlays">
+  <div class="wrap">
+    <p class="eyebrow">Star Overlays</p>
+    <h2>See what's starred without opening anything.</h2>
+    <p class="lede">Favorited items get a ★ overlay in the Project and Hierarchy windows. Click the overlay to unfavorite directly. Both toggle independently in Preferences.</p>
+    <div class="overlays">
+      <img src="images/overlays-a.png" alt="Hierarchy overlay" />
+      <img src="images/overlays-b.png" alt="Project overlay" />
+    </div>
+  </div>
+</section>
+
+<section id="context">
+  <div class="wrap feature">
+    <div class="feature-text">
+      <p class="eyebrow">Context Menu</p>
+      <h2>Everything one right-click away.</h2>
+      <ul>
+        <li>👁 Show in Project / Hierarchy</li>
+        <li>🗂 Show in Explorer</li>
+        <li>↗ Open — scene, IDE, prefab stage…</li>
+        <li>📷 Frame in Scene View</li>
+        <li>📋 Copy Path / GUID / Hierarchy Path</li>
+        <li>❌ Remove from Favorites</li>
+      </ul>
+    </div>
+    <div class="feature-media">
+      <img src="images/context-menu.png" alt="Context menu" />
+    </div>
+  </div>
+</section>
+
+<section id="preferences">
+  <div class="wrap feature reverse">
+    <div class="feature-text">
+      <p class="eyebrow">Preferences</p>
+      <h2>Tune it to your workflow.</h2>
+      <p class="lede"><strong>macOS:</strong> Unity → Settings → Starred &nbsp;·&nbsp; <strong>Windows:</strong> Edit → Preferences → Starred</p>
+      <ul>
+        <li>Show star in Project window — toggle Project ★ overlay.</li>
+        <li>Show star in Hierarchy — toggle Hierarchy ★ overlay.</li>
+        <li>Selection history max entries — 4 / 8 / 16 / 32.</li>
+      </ul>
+    </div>
+    <div class="feature-media">
+      <img src="images/preferences.png" alt="Preferences pane" />
+    </div>
+  </div>
+</section>
+
+<section id="install">
+  <div class="wrap">
+    <p class="eyebrow">Install</p>
+    <h2>Two clicks via Unity's Package Manager.</h2>
+    <p class="lede">Requires Unity 2022.3 LTS or newer. Editor-only — no runtime footprint, no dependencies.</p>
+
+    <div class="install-card">
+      <div class="install-step">
+        <h3>1 · Open Package Manager</h3>
+        <p><span class="menu-path">Window → Package Manager → + → Add package from git URL…</span></p>
+      </div>
+      <div class="install-step">
+        <h3>2 · Paste the URL</h3>
+        <div class="code-row">
+          <code id="git-url">https://github.com/landosilva/starred.git</code>
+          <button class="copy-btn" data-copy="git-url" type="button">Copy</button>
+        </div>
+        <p style="margin-top: 14px; color: var(--muted); font-size: 14px;">Pin to a release:</p>
+        <div class="code-row">
+          <code id="git-url-pin">https://github.com/landosilva/starred.git#v0.1.6</code>
+          <button class="copy-btn" data-copy="git-url-pin" type="button">Copy</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="compat">
+      <div class="compat-card ok">
+        <div class="v">Unity 6000.0 LTS</div>
+        <div class="s">✓ Tested</div>
+      </div>
+      <div class="compat-card ok">
+        <div class="v">Unity 2022.3 LTS</div>
+        <div class="s">✓ Tested</div>
+      </div>
+      <div class="compat-card">
+        <div class="v">Older</div>
+        <div class="s">Not supported</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="data">
+  <div class="wrap">
+    <p class="eyebrow">Data</p>
+    <h2>Your project stays untouched.</h2>
+    <p class="lede">Nothing Starred writes lives in <code style="font-family:'JetBrains Mono',monospace;color:var(--gold);background:rgba(255,212,0,0.06);padding:2px 6px;border-radius:4px;">Assets/</code>. Everything is per-user.</p>
+
+    <div class="data-table">
+      <div class="data-row head">
+        <div>What</div><div>Where</div><div>Scope</div>
+      </div>
+      <div class="data-row">
+        <div>Favorites</div>
+        <div><code>UserSettings/FavoriteAssets.json</code></div>
+        <div>Per-user, per-project. GUID-based.</div>
+      </div>
+      <div class="data-row">
+        <div>History</div>
+        <div><code>UserSettings/SelectionHistory.json</code></div>
+        <div>Per-user, per-project.</div>
+      </div>
+      <div class="data-row">
+        <div>Preferences</div>
+        <div><code>EditorPrefs</code></div>
+        <div>Per-user, per-machine.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div>
+      <a href="https://github.com/landosilva/starred">GitHub</a> &nbsp;·&nbsp;
+      <a href="https://github.com/landosilva/starred/releases">Releases</a> &nbsp;·&nbsp;
+      <a href="https://github.com/landosilva/starred/blob/main/CHANGELOG.md">Changelog</a> &nbsp;·&nbsp;
+      <a href="https://github.com/landosilva/starred/blob/main/LICENSE.md">MIT License</a>
+    </div>
+    <div class="kynesis">
+      A <strong>Kynesis</strong> release · by <a href="https://github.com/landosilva">Lando Silva</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  document.querySelectorAll('.copy-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var id = btn.getAttribute('data-copy');
+      var text = document.getElementById(id).textContent.trim();
+      navigator.clipboard.writeText(text).then(function () {
+        var orig = btn.textContent;
+        btn.textContent = 'Copied';
+        btn.classList.add('copied');
+        setTimeout(function () {
+          btn.textContent = orig;
+          btn.classList.remove('copied');
+        }, 1400);
+      });
+    });
+  });
+</script>
+
+</body>
+</html>
