@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/images/banner.png" alt="Starred" width="880" />
+<img src="https://raw.githubusercontent.com/landosilva/starred/gh-pages/images/banner.png" alt="Starred" width="880" />
 
 # Starred
 
@@ -11,7 +11,7 @@
 [![Release](https://img.shields.io/github/v/tag/landosilva/starred?label=release&color=gold)](https://github.com/landosilva/starred/releases)
 [![Kynesis](https://img.shields.io/badge/Kynesis-★-black)](https://github.com/landosilva)
 
-<img src="docs/images/hero-a.gif" alt="Favorites demo" width="380" /> <img src="docs/images/hero-b.gif" alt="History demo" width="380" />
+<img src="https://raw.githubusercontent.com/landosilva/starred/gh-pages/images/hero-a.gif" alt="Favorites demo" width="380" /> <img src="https://raw.githubusercontent.com/landosilva/starred/gh-pages/images/hero-b.gif" alt="History demo" width="380" />
 
 </div>
 
@@ -41,7 +41,7 @@ Requires **Unity 2022.3 LTS** or newer.
 `Tools → Starred → Favorites`
 
 <div align="center">
-<img src="docs/images/favorites.gif" alt="Favorites tray" width="600" />
+<img src="https://raw.githubusercontent.com/landosilva/starred/gh-pages/images/favorites.gif" alt="Favorites tray" width="600" />
 </div>
 
 - Drop in project assets or scene GameObjects.
@@ -56,7 +56,7 @@ Scene-bound entries use `scene-path + hierarchy-path`, so they only appear while
 `Tools → Starred → History`
 
 <div align="center">
-<img src="docs/images/history.gif" alt="Selection history" width="600" />
+<img src="https://raw.githubusercontent.com/landosilva/starred/gh-pages/images/history.gif" alt="Selection history" width="600" />
 </div>
 
 Auto-populated, most-recent-first. Re-selecting bumps to the top. Each row has a ★ button to promote to Favorites. Size caps at 4 / 8 / 16 / 32.
@@ -66,7 +66,7 @@ Auto-populated, most-recent-first. Re-selecting bumps to the top. Each row has a
 Favorited items get a ★ overlay in the **Project** and **Hierarchy** windows. Click the overlay to unfavorite directly.
 
 <div align="center">
-<img src="docs/images/overlays-a.png" alt="Hierarchy overlay" width="380" /> <img src="docs/images/overlays-b.png" alt="Project overlay" width="380" />
+<img src="https://raw.githubusercontent.com/landosilva/starred/gh-pages/images/overlays-a.png" alt="Hierarchy overlay" width="380" /> <img src="https://raw.githubusercontent.com/landosilva/starred/gh-pages/images/overlays-b.png" alt="Project overlay" width="380" />
 </div>
 
 Both overlays toggle independently in Preferences.
@@ -83,7 +83,7 @@ Every row has a context menu:
 - ❌ Remove from Favorites
 
 <div align="center">
-<img src="docs/images/context-menu.png" alt="Context menu" width="520" />
+<img src="https://raw.githubusercontent.com/landosilva/starred/gh-pages/images/context-menu.png" alt="Context menu" width="520" />
 </div>
 
 ## Preferences
@@ -92,7 +92,7 @@ Every row has a context menu:
 - **Windows:** Edit → Preferences → Starred
 
 <div align="center">
-<img src="docs/images/preferences.png" alt="Preferences" width="520" />
+<img src="https://raw.githubusercontent.com/landosilva/starred/gh-pages/images/preferences.png" alt="Preferences" width="520" />
 </div>
 
 - **Show star in Project window** — toggle Project ★ overlay.
