@@ -55,10 +55,10 @@ namespace Kynesis.Starred.Editor
 
         public void AddItemsToMenu(GenericMenu menu)
         {
-            menu.AddItem(new GUIContent(StarredText.ShowStarInProject), FavoriteAssetsSettings.ShowProjectWindowStar,
-                () => FavoriteAssetsSettings.ShowProjectWindowStar = !FavoriteAssetsSettings.ShowProjectWindowStar);
-            menu.AddItem(new GUIContent(StarredText.ShowStarInHierarchy), FavoriteAssetsSettings.ShowHierarchyStar,
-                () => FavoriteAssetsSettings.ShowHierarchyStar = !FavoriteAssetsSettings.ShowHierarchyStar);
+            menu.AddItem(new GUIContent(StarredText.ShowStarInProject), StarredSettings.ShowProjectWindowStar,
+                () => StarredSettings.ShowProjectWindowStar = !StarredSettings.ShowProjectWindowStar);
+            menu.AddItem(new GUIContent(StarredText.ShowStarInHierarchy), StarredSettings.ShowHierarchyStar,
+                () => StarredSettings.ShowHierarchyStar = !StarredSettings.ShowHierarchyStar);
             menu.AddSeparator("");
 
             if (FavoriteAssetsStore.Entries.Count > 0)
@@ -67,7 +67,7 @@ namespace Kynesis.Starred.Editor
                 menu.AddDisabledItem(new GUIContent(StarredText.ClearAllFavorites));
 
             menu.AddSeparator("");
-            menu.AddItem(new GUIContent(StarredText.OpenPreferences), false, FavoriteAssetsSettings.OpenPreferences);
+            menu.AddItem(new GUIContent(StarredText.OpenPreferences), false, StarredSettings.OpenPreferences);
         }
 
         private static void PromptClearFavorites()
@@ -113,7 +113,7 @@ namespace Kynesis.Starred.Editor
             VisualElement dragGhost = _reorder.CreateAndBindGhost(rootVisualElement, _list, _addOverlay);
             rootVisualElement.Add(dragGhost);
             _reorder.RegisterPointerHandlers();
-            _reorder.RegisterImguiFallback(() => FavoriteAssetsStore.AddRange(ExternalAssetDropZone.DraggedEntries()));
+            _reorder.RegisterImguiFallback(ExternalAssetDropZone.PerformDrop);
             ExternalAssetDropZone.Register(rootVisualElement, rootVisualElement, _addOverlay, _addOverlayLabel, _reorder.EndPress);
 
             Rebuild();
@@ -201,7 +201,7 @@ namespace Kynesis.Starred.Editor
                 {
                     EditorGUIUtility.PingObject(gameObject);
                     Selection.activeGameObject = gameObject;
-                }));
+                }, StarredText.ShowInHierarchy));
             }
 
             row.Add(CreateRemoveButton(entry));

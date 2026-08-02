@@ -18,7 +18,7 @@ namespace Kynesis.Starred.Editor
         private static void OnItemGUI(string guid, Rect selectionRect)
         {
             if (string.IsNullOrEmpty(guid)) return;
-            if (!FavoriteAssetsSettings.ShowProjectWindowStar) return;
+            if (!StarredSettings.ShowProjectWindowStar) return;
             if (!FavoriteAssetsStore.Contains(guid)) return;
 
             FavoriteStarHitTest.DrawAndHandleClick(selectionRect, () => FavoriteAssetsStore.Remove(guid));

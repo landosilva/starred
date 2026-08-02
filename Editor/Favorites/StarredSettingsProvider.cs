@@ -14,7 +14,7 @@ namespace Kynesis.Starred.Editor
         [SettingsProvider]
         public static SettingsProvider CreateProvider()
         {
-            return new SettingsProvider(FavoriteAssetsSettings.SettingsPath, SettingsScope.User)
+            return new SettingsProvider(StarredSettings.SettingsPath, SettingsScope.User)
             {
                 label = StarredText.Starred,
                 keywords = new HashSet<string> { "starred", "favorite", "favorites", "star", "project", "history", "selection" },
@@ -31,13 +31,13 @@ namespace Kynesis.Starred.Editor
                 DrawSectionHeader(StarredText.Favorites, StarredText.FavoritesMenuHint);
                 using (new EditorGUI.IndentLevelScope())
                 {
-                    FavoriteAssetsSettings.ShowProjectWindowStar = EditorGUILayout.Toggle(
+                    StarredSettings.ShowProjectWindowStar = EditorGUILayout.Toggle(
                         new GUIContent(StarredText.ShowStarInProjectWindow, StarredText.ShowStarInProjectWindowTooltip),
-                        FavoriteAssetsSettings.ShowProjectWindowStar);
+                        StarredSettings.ShowProjectWindowStar);
 
-                    FavoriteAssetsSettings.ShowHierarchyStar = EditorGUILayout.Toggle(
+                    StarredSettings.ShowHierarchyStar = EditorGUILayout.Toggle(
                         new GUIContent(StarredText.ShowStarInHierarchy, StarredText.ShowStarInHierarchyTooltip),
-                        FavoriteAssetsSettings.ShowHierarchyStar);
+                        StarredSettings.ShowHierarchyStar);
                 }
 
                 EditorGUILayout.Space(6f);
@@ -45,11 +45,11 @@ namespace Kynesis.Starred.Editor
                 DrawSectionHeader(StarredText.History, StarredText.HistoryMenuHint);
                 using (new EditorGUI.IndentLevelScope())
                 {
-                    FavoriteAssetsSettings.MaxHistoryEntries = EditorGUILayout.IntPopup(
+                    StarredSettings.MaxHistoryEntries = EditorGUILayout.IntPopup(
                         new GUIContent(StarredText.SelectionHistoryMaxEntries, StarredText.SelectionHistoryMaxEntriesTooltip),
-                        FavoriteAssetsSettings.MaxHistoryEntries,
+                        StarredSettings.MaxHistoryEntries,
                         MaxHistoryLabels,
-                        FavoriteAssetsSettings.MaxHistoryEntriesChoices);
+                        StarredSettings.MaxHistoryEntriesChoices);
                 }
             }
             finally

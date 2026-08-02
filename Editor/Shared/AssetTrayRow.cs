@@ -76,9 +76,6 @@ namespace Kynesis.Starred.Editor
 
         public static VisualElement CreateSceneObjectRow(FavoriteEntry entry, out GameObject gameObject)
         {
-            gameObject = null;
-            if (!SceneObjectResolver.IsSceneAvailable(entry.ScenePath)) return null;
-
             gameObject = SceneObjectResolver.Find(entry);
             if (gameObject != null) EntryDisplayName.Capture(entry);
 
@@ -131,12 +128,12 @@ namespace Kynesis.Starred.Editor
             {
                 EditorGUIUtility.PingObject(asset);
                 Selection.activeObject = asset;
-            });
+            }, StarredText.ShowInProject);
         }
 
-        public static Button CreatePingButton(Action onClick)
+        public static Button CreatePingButton(Action onClick, string tooltip)
         {
-            Button button = new Button(onClick) { tooltip = StarredText.ShowInProject };
+            Button button = new Button(onClick) { tooltip = tooltip };
             button.AddToClassList(Classes.Ping);
             button.Add(new Image { image = EditorGUIUtility.IconContent("d_Search Icon").image });
             return button;

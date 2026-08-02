@@ -34,8 +34,21 @@ namespace Kynesis.Starred.Editor
         {
             try
             {
-                Directory.CreateDirectory(Path.GetDirectoryName(filePath));
-                File.WriteAllText(filePath, JsonUtility.ToJson(data, prettyPrint: true));
+                string directoryPath = Path.GetDirectoryName(filePath);
+                Directory.CreateDirectory(directoryPath);
+                string contents = JsonUtility.ToJson(data, prettyPrint: true);
+                string temporaryPath = filePath + ".tmp";
+                string backupPath = filePath + ".bak";
+                File.WriteAllText(temporaryPath, contents);
+                if (File.Exists(filePath))
+                {
+                    File.Replace(temporaryPath, filePath, backupPath);
+                    File.Delete(backupPath);
+                }
+                else
+                {
+                    File.Move(temporaryPath, filePath);
+                }
             }
             catch (Exception exception)
             {

@@ -54,12 +54,12 @@ namespace Kynesis.Starred.Editor
 
         public void AddItemsToMenu(GenericMenu menu)
         {
-            int currentMax = FavoriteAssetsSettings.MaxHistoryEntries;
-            foreach (int choice in FavoriteAssetsSettings.MaxHistoryEntriesChoices)
+            int currentMax = StarredSettings.MaxHistoryEntries;
+            foreach (int choice in StarredSettings.MaxHistoryEntriesChoices)
             {
                 int capturedChoice = choice;
                 menu.AddItem(new GUIContent($"{StarredText.MaxEntriesPrefix}{choice}"), currentMax == choice,
-                    () => FavoriteAssetsSettings.MaxHistoryEntries = capturedChoice);
+                    () => StarredSettings.MaxHistoryEntries = capturedChoice);
             }
             menu.AddSeparator("");
 
@@ -69,7 +69,7 @@ namespace Kynesis.Starred.Editor
                 menu.AddDisabledItem(new GUIContent(StarredText.ClearHistory));
 
             menu.AddSeparator("");
-            menu.AddItem(new GUIContent(StarredText.OpenPreferences), false, FavoriteAssetsSettings.OpenPreferences);
+            menu.AddItem(new GUIContent(StarredText.OpenPreferences), false, StarredSettings.OpenPreferences);
         }
 
         private void OnSceneOpened(Scene scene, OpenSceneMode _) => Rebuild();
@@ -216,7 +216,7 @@ namespace Kynesis.Starred.Editor
                 {
                     EditorGUIUtility.PingObject(asset);
                     SelectionHistoryTracker.SelectWithoutRecording(asset);
-                }));
+                }, StarredText.ShowInProject));
             }
 
             row.Add(CreateStarButton(entry));
@@ -243,7 +243,7 @@ namespace Kynesis.Starred.Editor
                 {
                     EditorGUIUtility.PingObject(gameObject);
                     SelectionHistoryTracker.SelectWithoutRecording(gameObject);
-                }));
+                }, StarredText.ShowInHierarchy));
                 row.Add(CreateStarButton(entry));
 
                 row.AddManipulator(new ContextualMenuManipulator(menuEvent =>

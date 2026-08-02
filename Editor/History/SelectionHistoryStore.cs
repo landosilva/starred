@@ -16,7 +16,7 @@ namespace Kynesis.Starred.Editor
         static SelectionHistoryStore()
         {
             Load();
-            FavoriteAssetsSettings.Changed += OnSettingChanged;
+            StarredSettings.Changed += OnSettingChanged;
         }
 
         public static void Clear()
@@ -28,7 +28,7 @@ namespace Kynesis.Starred.Editor
 
         private static void OnSettingChanged()
         {
-            if (_entries.Count <= FavoriteAssetsSettings.MaxHistoryEntries) return;
+            if (_entries.Count <= StarredSettings.MaxHistoryEntries) return;
             TrimToMax();
             Commit();
         }
@@ -60,7 +60,7 @@ namespace Kynesis.Starred.Editor
 
         private static void TrimToMax()
         {
-            int max = FavoriteAssetsSettings.MaxHistoryEntries;
+            int max = StarredSettings.MaxHistoryEntries;
             if (_entries.Count > max) _entries.RemoveRange(max, _entries.Count - max);
         }
 
@@ -75,11 +75,36 @@ namespace Kynesis.Starred.Editor
             if (!EditorJsonFile.TryLoad(FilePath, out SelectionHistoryMigration.SerializedData data)) return;
             List<FavoriteEntry> entries = SelectionHistoryMigration.ToCurrentEntries(data, out bool needsRewrite);
             if (entries == null) return;
+
             _entries.Clear();
-            _entries.AddRange(entries);
-            bool trimmed = _entries.Count > FavoriteAssetsSettings.MaxHistoryEntries;
+            HashSet<string> seen = new HashSet<string>();
+            bool cleaned = false;
+            foreach (FavoriteEntry entry in entries)
+            {
+                if (entry == null || (!entry.IsAsset && !entry.IsSceneObject))
+                {
+                    cleaned = true;
+                    continue;
+                }
+                if (!seen.Add(entry.LookupKey))
+                {
+                    cleaned = true;
+                    continue;
+                }
+                _entries.Add(entry);
+            }
+
+            bool namesFilled = false;
+            foreach (FavoriteEntry entry in _entries)
+            {
+                string previous = entry.DisplayName;
+                EntryDisplayName.Capture(entry);
+                if (entry.DisplayName != previous) namesFilled = true;
+            }
+
+            bool trimmed = _entries.Count > StarredSettings.MaxHistoryEntries;
             TrimToMax();
-            if (needsRewrite || trimmed) Save();
+            if (needsRewrite || cleaned || namesFilled || trimmed) Save();
         }
 
         private static void Save()

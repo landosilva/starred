@@ -30,7 +30,7 @@ namespace Kynesis.Starred.Editor
 
         private static void DrawOverlay(UnityEngine.Object unityObject, Rect selectionRect)
         {
-            if (!FavoriteAssetsSettings.ShowHierarchyStar) return;
+            if (!StarredSettings.ShowHierarchyStar) return;
             if (!FavoriteAssetsStore.HasAnySceneObject) return;
 
             if (unityObject is not GameObject gameObject) return;

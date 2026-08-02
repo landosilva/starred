@@ -3,7 +3,7 @@ namespace Kynesis.Starred.Editor
     using System;
     using UnityEditor;
 
-    internal static class FavoriteAssetsSettings
+    internal static class StarredSettings
     {
         public const string SettingsPath = "Preferences/Starred";
 

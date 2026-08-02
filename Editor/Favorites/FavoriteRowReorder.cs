@@ -243,7 +243,6 @@ namespace Kynesis.Starred.Editor
 
             if (imguiEvent.type == EventType.DragPerform)
             {
-                DragAndDrop.AcceptDrag();
                 onImguiDrop?.Invoke();
                 imguiEvent.Use();
             }

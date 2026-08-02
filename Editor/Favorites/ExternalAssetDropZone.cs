@@ -10,33 +10,52 @@ namespace Kynesis.Starred.Editor
     {
         public static bool HasAnySupportedItemInDrag()
         {
-            return (DragAndDrop.paths?.Length ?? 0) > 0
-                || (DragAndDrop.objectReferences?.Length ?? 0) > 0;
+            List<FavoriteEntry> entries = CollectDraggedEntries(logWarnings: false);
+            return entries.Count > 0;
         }
 
-        public static IEnumerable<FavoriteEntry> DraggedEntries()
+        public static IEnumerable<FavoriteEntry> DraggedEntries() =>
+            CollectDraggedEntries(logWarnings: true);
+
+        public static void PerformDrop()
         {
+            List<FavoriteEntry> entries = CollectDraggedEntries(logWarnings: true);
+            if (entries.Count == 0) return;
+            DragAndDrop.AcceptDrag();
+            FavoriteAssetsStore.AddRange(entries);
+        }
+
+        private static List<FavoriteEntry> CollectDraggedEntries(bool logWarnings)
+        {
+            List<FavoriteEntry> entries = new List<FavoriteEntry>();
             HashSet<string> seen = new HashSet<string>();
-            foreach (string path in DragAndDrop.paths)
+
+            string[] paths = DragAndDrop.paths ?? Array.Empty<string>();
+            foreach (string path in paths)
             {
                 if (string.IsNullOrEmpty(path)) continue;
                 string guid = AssetDatabase.AssetPathToGUID(path);
                 if (string.IsNullOrEmpty(guid)) continue;
                 FavoriteEntry entry = FavoriteEntry.ForAsset(guid);
-                if (seen.Add(entry.LookupKey)) yield return entry;
+                if (seen.Add(entry.LookupKey)) entries.Add(entry);
             }
-            foreach (UnityEngine.Object draggedObject in DragAndDrop.objectReferences)
+
+            UnityEngine.Object[] objectReferences = DragAndDrop.objectReferences ?? Array.Empty<UnityEngine.Object>();
+            foreach (UnityEngine.Object draggedObject in objectReferences)
             {
                 if (draggedObject is not GameObject gameObject || EditorUtility.IsPersistent(gameObject)) continue;
                 FavoriteEntry entry = SceneObjectResolver.BuildEntry(gameObject);
                 if (entry == null || string.IsNullOrEmpty(entry.ScenePath))
                 {
-                    StarredLog.Warning($"Can't favorite '{gameObject.name}' — save its scene first.");
+                    if (logWarnings)
+                        StarredLog.Warning($"Can't favorite '{gameObject.name}' — save its scene first.");
                     continue;
                 }
                 if (string.IsNullOrEmpty(entry.GlobalObjectId)) continue;
-                if (seen.Add(entry.LookupKey)) yield return entry;
+                if (seen.Add(entry.LookupKey)) entries.Add(entry);
             }
+
+            return entries;
         }
 
         public static void Register(
@@ -50,7 +69,8 @@ namespace Kynesis.Starred.Editor
             {
                 if (dragEnterEvent.target != zone) return;
                 endPress();
-                ShowAddOverlay(root, addOverlay, addOverlayLabel);
+                if (HasAnySupportedItemInDrag())
+                    ShowAddOverlay(root, addOverlay, addOverlayLabel);
             });
             zone.RegisterCallback<DragLeaveEvent>(dragLeaveEvent =>
             {
@@ -61,9 +81,10 @@ namespace Kynesis.Starred.Editor
 
             zone.RegisterCallback<DragUpdatedEvent>(dragUpdatedEvent =>
             {
-                if (addOverlay.style.display == DisplayStyle.None && HasAnySupportedItemInDrag())
+                bool supported = HasAnySupportedItemInDrag();
+                if (addOverlay.style.display == DisplayStyle.None && supported)
                     ShowAddOverlay(root, addOverlay, addOverlayLabel);
-                DragAndDrop.visualMode = HasAnySupportedItemInDrag()
+                DragAndDrop.visualMode = supported
                     ? DragAndDropVisualMode.Copy
                     : DragAndDropVisualMode.Rejected;
                 dragUpdatedEvent.StopPropagation();
@@ -71,8 +92,7 @@ namespace Kynesis.Starred.Editor
 
             zone.RegisterCallback<DragPerformEvent>(dragPerformEvent =>
             {
-                DragAndDrop.AcceptDrag();
-                FavoriteAssetsStore.AddRange(DraggedEntries());
+                PerformDrop();
                 HideAddOverlay(root, addOverlay);
                 dragPerformEvent.StopPropagation();
             });
@@ -82,11 +102,11 @@ namespace Kynesis.Starred.Editor
         {
             if (addOverlay == null) return;
 
-            bool allDuplicate = true;
-            bool anyItem = false;
-            foreach (FavoriteEntry entry in DraggedEntries())
+            List<FavoriteEntry> entries = CollectDraggedEntries(logWarnings: false);
+            bool anyItem = entries.Count > 0;
+            bool allDuplicate = anyItem;
+            foreach (FavoriteEntry entry in entries)
             {
-                anyItem = true;
                 if (!FavoriteAssetsStore.Contains(entry)) { allDuplicate = false; break; }
             }
             bool duplicate = anyItem && allDuplicate;

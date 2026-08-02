@@ -18,7 +18,9 @@ namespace Kynesis.Starred.Editor
 
         public static void SelectWithoutRecording(UnityEngine.Object target)
         {
-            SuppressNext();
+            if (target == null) return;
+            if (Selection.activeObject != target)
+                SuppressNext();
             SelectionWithoutProjectJump.Select(target);
         }
 
