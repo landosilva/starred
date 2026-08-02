@@ -36,11 +36,9 @@ openupm add com.kynesis.starred
 
 Or add the OpenUPM scoped registry, then install `com.kynesis.starred` from Package Manager:
 
-| | |
-| --- | --- |
-| Name | `package.openupm.com` |
-| URL | `https://package.openupm.com` |
-| Scope | `com.kynesis` |
+- **Name:** `package.openupm.com`
+- **URL:** `https://package.openupm.com`
+- **Scope:** `com.kynesis`
 
 Package page: [com.kynesis.starred](https://openupm.com/packages/com.kynesis.starred/)
 
