@@ -3,18 +3,18 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Starred — Favorites & Selection History for the Unity Editor</title>
-<meta name="description" content="A compact favorites tray plus selection history for the Unity Editor. Star assets and scene objects, jump back to recently-used items, see at-a-glance which things are starred." />
+<title>Starred: Favorites & Selection History for the Unity Editor</title>
+<meta name="description" content="A compact favorites tray plus selection history for the Unity Editor. Star assets and scene objects, jump back to recent selections, see what's starred in the Project window and Hierarchy." />
 
 <link rel="icon" type="image/png" href="images/icon.png" />
 <link rel="apple-touch-icon" href="images/icon.png" />
 
 <meta property="og:type" content="website" />
-<meta property="og:title" content="Starred — Favorites & Selection History for Unity" />
+<meta property="og:title" content="Starred: Favorites & Selection History for Unity" />
 <meta property="og:description" content="A compact favorites tray plus selection history for the Unity Editor." />
 <meta property="og:image" content="images/social.png" />
 <meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:title" content="Starred — Favorites & Selection History for Unity" />
+<meta name="twitter:title" content="Starred: Favorites & Selection History for Unity" />
 <meta name="twitter:description" content="A compact favorites tray plus selection history for the Unity Editor." />
 <meta name="twitter:image" content="images/social.png" />
 
@@ -247,23 +247,60 @@
   .copy-btn:hover { color: var(--gold); background: rgba(255,212,0,0.04); }
   .copy-btn.copied { color: var(--gold); }
 
-  .asset-store-strip {
-    display: flex; align-items: center; justify-content: space-between; gap: 20px;
+  .embed-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    max-width: 880px;
+    margin: 24px auto 0;
+  }
+  .embed-card {
+    display: flex;
+    gap: 14px;
     background: var(--panel);
     border: 1px solid var(--line);
     border-radius: var(--radius);
-    padding: 20px 24px;
-    margin-top: 16px;
+    padding: 14px 16px;
+    text-decoration: none;
+    text-align: left;
+    color: inherit;
+    transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
   }
-  .asset-store-strip p {
-    margin: 0;
+  .embed-card:hover {
+    text-decoration: none;
+    background: var(--panel-2);
+    border-color: rgba(255, 212, 0, 0.25);
+    transform: translateY(-2px);
+  }
+  .embed-thumb {
+    width: 72px;
+    height: 72px;
+    border-radius: 8px;
+    object-fit: cover;
+    flex-shrink: 0;
+  }
+  .embed-body {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+  .embed-source {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
     color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .embed-title {
+    font-weight: 600;
+    color: var(--text);
     font-size: 15px;
   }
-  .asset-store-strip .btn-ghost {
-    flex-shrink: 0;
-    padding: 10px 16px;
-    font-size: 14px;
+  .embed-desc {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.4;
   }
 
   .compat {
@@ -331,10 +368,7 @@
     .data-row { grid-template-columns: 1fr; gap: 4px; padding: 14px 16px; }
     .data-row.head { display: none; }
     section { padding: 56px 0; }
-    .asset-store-strip {
-      flex-direction: column;
-      align-items: flex-start;
-    }
+    .embed-row { grid-template-columns: 1fr; }
   }
 </style>
 </head>
@@ -348,6 +382,7 @@
     </a>
     <div class="nav-links">
       <a href="https://github.com/landosilva/starred" class="nav-link">GitHub</a>
+      <a href="https://assetstore.unity.com/packages/tools/utilities/starred-376068" class="nav-link" target="_blank" rel="noopener noreferrer">Asset Store</a>
       <a href="#install" class="btn-gold">Install</a>
     </div>
   </div>
@@ -357,9 +392,9 @@
 
 <header class="hero wrap">
   <div class="hero-content">
-    <img class="hero-banner" src="images/banner.png" alt="Starred — Favorites & Selection History for the Unity Editor" />
+    <img class="hero-banner" src="images/banner.png" alt="Starred: Favorites and Selection History for the Unity Editor" />
 
-    <p class="sub">Star the assets and scene objects you live in. Jump back to anything you just touched — with at-a-glance ★ overlays right in the Project window and Hierarchy.</p>
+    <p class="sub">Star assets and scene objects you use often. Jump back to recent selections. See what's starred in the Project window and Hierarchy.</p>
 
     <div class="badges">
       <img src="https://img.shields.io/badge/Unity-2022.3%2B-000?logo=unity" alt="Unity 2022.3+" />
@@ -369,7 +404,24 @@
 
     <div class="cta-row">
       <a href="#install" class="btn btn-primary">Install</a>
-      <a href="https://github.com/landosilva/starred" class="btn btn-ghost">GitHub</a>
+    </div>
+    <div class="embed-row">
+      <a class="embed-card" href="https://assetstore.unity.com/packages/tools/utilities/starred-376068" target="_blank" rel="noopener noreferrer">
+        <img class="embed-thumb" src="https://assetstorev1-prd-cdn.unity3d.com/key-image/d3e6281d-6b81-4cef-a04b-3c08fa78fece.webp" alt="" />
+        <span class="embed-body">
+          <span class="embed-source">assetstore.unity.com</span>
+          <span class="embed-title">Starred</span>
+          <span class="embed-desc">Editor tools on the Unity Asset Store</span>
+        </span>
+      </a>
+      <a class="embed-card" href="https://github.com/landosilva/starred" target="_blank" rel="noopener noreferrer">
+        <img class="embed-thumb" src="images/social.png" alt="" />
+        <span class="embed-body">
+          <span class="embed-source">github.com</span>
+          <span class="embed-title">landosilva/starred</span>
+          <span class="embed-desc">Open source favorites tray and selection history for Unity</span>
+        </span>
+      </a>
     </div>
   </div>
 
@@ -385,11 +437,11 @@
       <p class="eyebrow">Favorites</p>
       <h2>A tray for the things you actually use.</h2>
       <span class="menu-path">Tools → Starred → Favorites</span>
-      <p class="lede">Drop in project assets or scene GameObjects. Click to select, double-click to open or frame, drag out onto Inspector fields.</p>
+      <p class="lede">Drop in project assets or scene GameObjects. Click to select, double click to open or frame, drag out onto Inspector fields.</p>
       <ul>
-        <li>Flat ordered list — no folders, no nesting. It stays a tray.</li>
+        <li>Flat ordered list. No folders, no nesting. It stays a tray.</li>
         <li>Reorder by drag. Lens icon to ping in Project or Hierarchy.</li>
-        <li>Scene-bound entries keyed by scene + hierarchy path — only visible when their scene is loaded.</li>
+        <li>Scene entries keyed by scene + hierarchy path. Only visible when their scene is loaded.</li>
         <li>Missing or renamed objects show red so you can clean them up.</li>
       </ul>
     </div>
@@ -405,10 +457,10 @@
       <p class="eyebrow">Selection History</p>
       <h2>Back to what you just had.</h2>
       <span class="menu-path">Tools → Starred → History</span>
-      <p class="lede">Auto-populated, most-recent-first. Re-selecting bumps to the top. Each row has a ★ button to promote straight to Favorites.</p>
+      <p class="lede">Filled automatically, newest first. Selecting an item again moves it to the top. Each row has a ★ button to promote straight to Favorites.</p>
       <ul>
-        <li>Tracks both project assets and scene / prefab-stage GameObjects.</li>
-        <li>Single-click inspects. Lens pings. Double-click opens or frames.</li>
+        <li>Tracks both project assets and scene / prefab stage GameObjects.</li>
+        <li>Single click inspects. Lens pings. Double click opens or frames.</li>
         <li>Size caps configurable: 4 / 8 / 16 / 32.</li>
       </ul>
     </div>
@@ -434,11 +486,11 @@
   <div class="wrap feature">
     <div class="feature-text">
       <p class="eyebrow">Context Menu</p>
-      <h2>Everything one right-click away.</h2>
+      <h2>Everything a right click away.</h2>
       <ul>
         <li>Show in Project / Hierarchy</li>
         <li>Show in Explorer</li>
-        <li>Open — scene, IDE, prefab stage…</li>
+        <li>Open: scene, IDE, prefab stage…</li>
         <li>Frame in Scene View</li>
         <li>Copy Path / GUID / Hierarchy Path</li>
         <li>Remove from Favorites</li>
@@ -457,9 +509,9 @@
       <h2>Tune it to your workflow.</h2>
       <p class="lede"><strong>macOS:</strong> Unity → Settings → Starred &nbsp;·&nbsp; <strong>Windows:</strong> Edit → Preferences → Starred</p>
       <ul>
-        <li>Show star in Project window — toggle Project ★ overlay.</li>
-        <li>Show star in Hierarchy — toggle Hierarchy ★ overlay.</li>
-        <li>Selection history max entries — 4 / 8 / 16 / 32.</li>
+        <li>Show star in Project window: toggle Project ★ overlay.</li>
+        <li>Show star in Hierarchy: toggle Hierarchy ★ overlay.</li>
+        <li>Selection history max entries: 4 / 8 / 16 / 32.</li>
       </ul>
     </div>
     <div class="feature-media">
@@ -472,7 +524,7 @@
   <div class="wrap">
     <p class="eyebrow">Install</p>
     <h2>Get it into your project.</h2>
-    <p class="lede">Requires Unity 2022.3 LTS or newer. Editor-only — no runtime footprint, no dependencies.</p>
+    <p class="lede">Requires Unity 2022.3 LTS or newer. Editor only. No runtime footprint, no dependencies.</p>
 
     <div class="install-card">
       <div class="install-step">
@@ -493,9 +545,23 @@
       </div>
     </div>
 
-    <div class="asset-store-strip">
-      <p>Also on the Unity Asset Store — one-click import, no git URL needed.</p>
-      <a href="https://assetstore.unity.com/packages/tools/utilities/starred-376068" class="btn btn-ghost" target="_blank" rel="noopener noreferrer">Asset Store</a>
+    <div class="embed-row">
+      <a class="embed-card" href="https://assetstore.unity.com/packages/tools/utilities/starred-376068" target="_blank" rel="noopener noreferrer">
+        <img class="embed-thumb" src="https://assetstorev1-prd-cdn.unity3d.com/key-image/d3e6281d-6b81-4cef-a04b-3c08fa78fece.webp" alt="" />
+        <span class="embed-body">
+          <span class="embed-source">assetstore.unity.com</span>
+          <span class="embed-title">Starred</span>
+          <span class="embed-desc">Editor tools on the Unity Asset Store</span>
+        </span>
+      </a>
+      <a class="embed-card" href="https://github.com/landosilva/starred" target="_blank" rel="noopener noreferrer">
+        <img class="embed-thumb" src="images/social.png" alt="" />
+        <span class="embed-body">
+          <span class="embed-source">github.com</span>
+          <span class="embed-title">landosilva/starred</span>
+          <span class="embed-desc">Open source favorites tray and selection history for Unity</span>
+        </span>
+      </a>
     </div>
 
     <div class="compat">
@@ -519,7 +585,7 @@
   <div class="wrap">
     <p class="eyebrow">Data</p>
     <h2>Your project stays untouched.</h2>
-    <p class="lede">Nothing Starred writes lives in <code style="font-family:'JetBrains Mono',monospace;color:var(--gold);background:rgba(255,212,0,0.06);padding:2px 6px;border-radius:4px;">Assets/</code>. Everything is per-user.</p>
+    <p class="lede">Nothing Starred writes lives in <code style="font-family:'JetBrains Mono',monospace;color:var(--gold);background:rgba(255,212,0,0.06);padding:2px 6px;border-radius:4px;">Assets/</code>. Everything is per user.</p>
 
     <div class="data-table">
       <div class="data-row head">
@@ -528,17 +594,17 @@
       <div class="data-row">
         <div>Favorites</div>
         <div><code>UserSettings/FavoriteAssets.json</code></div>
-        <div>Per-user, per-project. GUID-based.</div>
+        <div>Per user, per project. GUID-based.</div>
       </div>
       <div class="data-row">
         <div>History</div>
         <div><code>UserSettings/SelectionHistory.json</code></div>
-        <div>Per-user, per-project.</div>
+        <div>Per user, per project.</div>
       </div>
       <div class="data-row">
         <div>Preferences</div>
         <div><code>EditorPrefs</code></div>
-        <div>Per-user, per-machine.</div>
+        <div>Per user, per machine.</div>
       </div>
     </div>
   </div>
