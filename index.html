@@ -129,6 +129,12 @@
   .btn-primary:hover { text-decoration: none; transform: translateY(-1px); box-shadow: 0 8px 24px var(--gold-glow); }
   .btn-ghost { background: var(--panel); color: var(--text) !important; border-color: var(--line); }
   .btn-ghost:hover { text-decoration: none; background: var(--panel-2); border-color: #353540; }
+  .install-options {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 16px; margin-top: 28px;
+  }
+  .install-options .install-card { margin-top: 0; height: 100%; }
+  .install-card .btn { margin-top: 4px; }
 
   .hero-pair {
     display: grid; grid-template-columns: 1fr 1fr;
@@ -311,6 +317,7 @@
     .feature.reverse .feature-text { order: 0; }
     .hero-pair { grid-template-columns: 1fr; }
     .compat { grid-template-columns: 1fr; }
+    .install-options { grid-template-columns: 1fr; }
     .data-row { grid-template-columns: 1fr; gap: 4px; padding: 14px 16px; }
     .data-row.head { display: none; }
     section { padding: 56px 0; }
@@ -349,7 +356,8 @@
   </div>
 
   <div class="cta-row">
-    <a href="#install" class="btn btn-primary">Install via UPM</a>
+    <a href="https://assetstore.unity.com/packages/tools/utilities/starred-376068" class="btn btn-primary" target="_blank" rel="noopener noreferrer">Get on Asset Store</a>
+    <a href="#install" class="btn btn-ghost">Install via UPM</a>
     <a href="https://github.com/landosilva/starred" class="btn btn-ghost">View on GitHub</a>
   </div>
 
@@ -451,24 +459,34 @@
 <section id="install">
   <div class="wrap">
     <p class="eyebrow">Install</p>
-    <h2>Two clicks via Unity's Package Manager.</h2>
+    <h2>Install from the Asset Store or Package Manager.</h2>
     <p class="lede">Requires Unity 2022.3 LTS or newer. Editor-only — no runtime footprint, no dependencies.</p>
 
-    <div class="install-card">
-      <div class="install-step">
-        <h3>1 · Open Package Manager</h3>
-        <p><span class="menu-path">Window → Package Manager → + → Add package from git URL…</span></p>
-      </div>
-      <div class="install-step">
-        <h3>2 · Paste the URL</h3>
-        <div class="code-row">
-          <code id="git-url">https://github.com/landosilva/starred.git</code>
-          <button class="copy-btn" data-copy="git-url" type="button">Copy</button>
+    <div class="install-options">
+      <div class="install-card">
+        <div class="install-step">
+          <h3>Asset Store</h3>
+          <p>Get Starred from the Unity Asset Store, then import it into your project from <span class="menu-path">Window → Package Manager → My Assets</span>.</p>
+          <a href="https://assetstore.unity.com/packages/tools/utilities/starred-376068" class="btn btn-primary" target="_blank" rel="noopener noreferrer">Open Asset Store →</a>
         </div>
-        <p style="margin-top: 14px; color: var(--muted); font-size: 14px;">Pin to a release:</p>
-        <div class="code-row">
-          <code id="git-url-pin">https://github.com/landosilva/starred.git#v0.1.6</code>
-          <button class="copy-btn" data-copy="git-url-pin" type="button">Copy</button>
+      </div>
+
+      <div class="install-card">
+        <div class="install-step">
+          <h3>Package Manager (git URL)</h3>
+          <p><span class="menu-path">Window → Package Manager → + → Add package from git URL…</span></p>
+        </div>
+        <div class="install-step">
+          <h3>Paste the URL</h3>
+          <div class="code-row">
+            <code id="git-url">https://github.com/landosilva/starred.git</code>
+            <button class="copy-btn" data-copy="git-url" type="button">Copy</button>
+          </div>
+          <p style="margin-top: 14px; color: var(--muted); font-size: 14px;">Pin to a release:</p>
+          <div class="code-row">
+            <code id="git-url-pin">https://github.com/landosilva/starred.git#v0.1.6</code>
+            <button class="copy-btn" data-copy="git-url-pin" type="button">Copy</button>
+          </div>
         </div>
       </div>
     </div>
@@ -523,6 +541,7 @@
   <div class="wrap">
     <div>
       <a href="https://github.com/landosilva/starred">GitHub</a> &nbsp;·&nbsp;
+      <a href="https://assetstore.unity.com/packages/tools/utilities/starred-376068" target="_blank" rel="noopener noreferrer">Asset Store</a> &nbsp;·&nbsp;
       <a href="https://github.com/landosilva/starred/releases">Releases</a> &nbsp;·&nbsp;
       <a href="https://github.com/landosilva/starred/blob/main/CHANGELOG.md">Changelog</a> &nbsp;·&nbsp;
       <a href="https://github.com/landosilva/starred/blob/main/LICENSE.md">MIT License</a>
