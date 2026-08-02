@@ -6,6 +6,7 @@ Thumbs.db
 .cursor/
 FEATURES.md
 FEATURES.md.meta
+dist/
 
 Library/
 Logs/
