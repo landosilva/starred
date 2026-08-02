@@ -20,7 +20,7 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
 <style>
   :root {
@@ -39,11 +39,14 @@
   }
 
   * { box-sizing: border-box; }
+  html {
+    scroll-behavior: smooth;
+  }
   html, body { margin: 0; padding: 0; }
   body {
     background: var(--bg);
     color: var(--text);
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-family: 'Sora', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     font-size: 16px;
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
@@ -59,7 +62,6 @@
 
   .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 24px; }
 
-  /* Nav */
   .nav {
     position: sticky; top: 0; z-index: 50;
     backdrop-filter: blur(10px);
@@ -71,41 +73,46 @@
     padding: 14px 24px;
     max-width: var(--maxw); margin: 0 auto;
   }
-  .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; letter-spacing: -0.01em; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; letter-spacing: -0.01em; text-decoration: none; }
+  .brand:hover { text-decoration: none; }
   .brand img { width: 26px; height: 26px; border-radius: 6px; }
   .brand span { color: var(--text); }
-  .nav-links { display: flex; gap: 22px; align-items: center; }
-  .nav-links a { color: var(--muted); font-size: 14px; font-weight: 500; }
-  .nav-links a:hover { color: var(--text); text-decoration: none; }
-  .nav-cta {
+  .nav-links { display: flex; gap: 16px; align-items: center; }
+  .nav-link {
+    color: var(--muted); font-size: 14px; font-weight: 500;
+    transition: color 0.15s ease;
+  }
+  .nav-link:hover { color: var(--text); text-decoration: none; }
+  .btn-gold {
+    display: inline-flex; align-items: center;
     background: var(--gold); color: #111 !important;
     padding: 8px 14px; border-radius: 8px;
     font-weight: 600; font-size: 14px;
+    border: 1px solid transparent;
     transition: transform 0.15s ease, box-shadow 0.15s ease;
   }
-  .nav-cta:hover { text-decoration: none; transform: translateY(-1px); box-shadow: 0 6px 20px var(--gold-glow); }
+  .btn-gold:hover { text-decoration: none; transform: translateY(-1px); box-shadow: 0 6px 20px var(--gold-glow); }
 
-  /* Hero */
   .hero { padding: 64px 0 40px; text-align: center; }
+  .hero-content {
+    animation: fadeUp 0.7s ease both;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
   .hero-banner {
     width: 100%; max-width: 880px;
     border-radius: var(--radius);
     border: 1px solid var(--line);
     box-shadow: 0 30px 80px rgba(0,0,0,0.5);
   }
-  .tagline {
-    margin: 28px auto 0;
-    font-size: clamp(20px, 3vw, 26px);
-    font-weight: 500;
-    color: var(--text);
-    max-width: 720px;
-    line-height: 1.4;
-  }
   .sub {
-    margin: 14px auto 0;
+    margin: 24px auto 0;
     color: var(--muted);
     max-width: 620px;
-    font-size: 16px;
+    font-size: 17px;
+    line-height: 1.55;
   }
   .badges {
     display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;
@@ -122,7 +129,7 @@
     border-radius: 10px;
     font-weight: 600;
     font-size: 15px;
-    transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease, border-color 0.15s ease;
     border: 1px solid transparent;
   }
   .btn-primary { background: var(--gold); color: #111 !important; }
@@ -143,7 +150,6 @@
     background: var(--panel);
   }
 
-  /* Sections */
   section { padding: 80px 0; }
   section + section { border-top: 1px solid var(--line); }
   .eyebrow {
@@ -160,7 +166,6 @@
   }
   .lede { color: var(--muted); max-width: 640px; font-size: 17px; }
 
-  /* Feature blocks */
   .feature {
     display: grid; grid-template-columns: 1.1fr 1fr;
     gap: 56px; align-items: center;
@@ -199,11 +204,9 @@
     margin-bottom: 18px;
   }
 
-  /* Overlay pair */
   .overlays { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 28px; }
   .overlays img { width: 100%; display: block; border-radius: var(--radius); border: 1px solid var(--line); }
 
-  /* Install */
   .install-card {
     background: var(--panel);
     border: 1px solid var(--line);
@@ -244,7 +247,25 @@
   .copy-btn:hover { color: var(--gold); background: rgba(255,212,0,0.04); }
   .copy-btn.copied { color: var(--gold); }
 
-  /* Compatibility table */
+  .asset-store-strip {
+    display: flex; align-items: center; justify-content: space-between; gap: 20px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    margin-top: 16px;
+  }
+  .asset-store-strip p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 15px;
+  }
+  .asset-store-strip .btn-ghost {
+    flex-shrink: 0;
+    padding: 10px 16px;
+    font-size: 14px;
+  }
+
   .compat {
     display: grid; grid-template-columns: 1fr 1fr 1fr;
     gap: 14px; margin-top: 28px;
@@ -265,7 +286,6 @@
   .compat-card.ok { border-color: rgba(255,212,0,0.25); }
   .compat-card.ok .s { color: var(--gold); }
 
-  /* Data table */
   .data-table {
     margin-top: 24px;
     border: 1px solid var(--line);
@@ -289,7 +309,6 @@
     border-radius: 4px;
   }
 
-  /* Footer */
   footer {
     border-top: 1px solid var(--line);
     padding: 40px 0 56px;
@@ -304,9 +323,7 @@
   }
   footer .kynesis strong { color: var(--text); font-weight: 600; }
 
-  /* Responsive */
   @media (max-width: 760px) {
-    .nav-links a:not(.nav-cta) { display: none; }
     .feature, .feature.reverse { grid-template-columns: 1fr; gap: 28px; }
     .feature.reverse .feature-text { order: 0; }
     .hero-pair { grid-template-columns: 1fr; }
@@ -314,6 +331,10 @@
     .data-row { grid-template-columns: 1fr; gap: 4px; padding: 14px 16px; }
     .data-row.head { display: none; }
     section { padding: 56px 0; }
+    .asset-store-strip {
+      flex-direction: column;
+      align-items: flex-start;
+    }
   }
 </style>
 </head>
@@ -326,10 +347,8 @@
       <span>Starred</span>
     </a>
     <div class="nav-links">
-      <a href="#favorites">Favorites</a>
-      <a href="#history">History</a>
-      <a href="#install">Install</a>
-      <a href="https://github.com/landosilva/starred" class="nav-cta">GitHub →</a>
+      <a href="https://github.com/landosilva/starred" class="nav-link">GitHub</a>
+      <a href="#install" class="btn-gold">Install</a>
     </div>
   </div>
 </nav>
@@ -337,21 +356,21 @@
 <a id="top"></a>
 
 <header class="hero wrap">
-  <img class="hero-banner" src="images/banner.png" alt="Starred — Favorites & Selection History for the Unity Editor" />
+  <div class="hero-content">
+    <img class="hero-banner" src="images/banner.png" alt="Starred — Favorites & Selection History for the Unity Editor" />
 
-  <p class="tagline">Favorites tray + selection history for the Unity Editor.</p>
-  <p class="sub">Star the assets and scene objects you live in. Jump back to anything you just touched. See at a glance what's starred — right inside the Project window and Hierarchy.</p>
+    <p class="sub">Star the assets and scene objects you live in. Jump back to anything you just touched — with at-a-glance ★ overlays right in the Project window and Hierarchy.</p>
 
-  <div class="badges">
-    <img src="https://img.shields.io/badge/Unity-2022.3%2B-000?logo=unity" alt="Unity 2022.3+" />
-    <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="MIT License" />
-    <img src="https://img.shields.io/github/v/tag/landosilva/starred?label=release&color=gold" alt="Latest release" />
-  </div>
+    <div class="badges">
+      <img src="https://img.shields.io/badge/Unity-2022.3%2B-000?logo=unity" alt="Unity 2022.3+" />
+      <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="MIT License" />
+      <img src="https://img.shields.io/github/v/tag/landosilva/starred?label=release&color=gold" alt="Latest release" />
+    </div>
 
-  <div class="cta-row">
-    <a href="#install" class="btn btn-primary">Install via UPM</a>
-    <a href="https://assetstore.unity.com/packages/tools/utilities/starred-376068" class="btn btn-ghost" target="_blank" rel="noopener noreferrer">Asset Store</a>
-    <a href="https://github.com/landosilva/starred" class="btn btn-ghost">View on GitHub</a>
+    <div class="cta-row">
+      <a href="#install" class="btn btn-primary">Install</a>
+      <a href="https://github.com/landosilva/starred" class="btn btn-ghost">GitHub</a>
+    </div>
   </div>
 
   <div class="hero-pair">
@@ -417,12 +436,12 @@
       <p class="eyebrow">Context Menu</p>
       <h2>Everything one right-click away.</h2>
       <ul>
-        <li>👁 Show in Project / Hierarchy</li>
-        <li>🗂 Show in Explorer</li>
-        <li>↗ Open — scene, IDE, prefab stage…</li>
-        <li>📷 Frame in Scene View</li>
-        <li>📋 Copy Path / GUID / Hierarchy Path</li>
-        <li>❌ Remove from Favorites</li>
+        <li>Show in Project / Hierarchy</li>
+        <li>Show in Explorer</li>
+        <li>Open — scene, IDE, prefab stage…</li>
+        <li>Frame in Scene View</li>
+        <li>Copy Path / GUID / Hierarchy Path</li>
+        <li>Remove from Favorites</li>
       </ul>
     </div>
     <div class="feature-media">
@@ -452,9 +471,8 @@
 <section id="install">
   <div class="wrap">
     <p class="eyebrow">Install</p>
-    <h2>Two clicks via Unity's Package Manager.</h2>
+    <h2>Get it into your project.</h2>
     <p class="lede">Requires Unity 2022.3 LTS or newer. Editor-only — no runtime footprint, no dependencies.</p>
-    <p class="lede" style="margin-top: 12px;">Or install from the <a href="https://assetstore.unity.com/packages/tools/utilities/starred-376068" target="_blank" rel="noopener noreferrer">Unity Asset Store</a>.</p>
 
     <div class="install-card">
       <div class="install-step">
@@ -473,6 +491,11 @@
           <button class="copy-btn" data-copy="git-url-pin" type="button">Copy</button>
         </div>
       </div>
+    </div>
+
+    <div class="asset-store-strip">
+      <p>Also on the Unity Asset Store — one-click import, no git URL needed.</p>
+      <a href="https://assetstore.unity.com/packages/tools/utilities/starred-376068" class="btn btn-ghost" target="_blank" rel="noopener noreferrer">Asset Store</a>
     </div>
 
     <div class="compat">
