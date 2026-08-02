@@ -5,6 +5,18 @@ All notable changes to this package are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-08-02
+
+### Added
+
+- **Click to select** in Favorites (Inspector updates without jumping the Project folder).
+- **Deleted entries keep their name** and show a `(deleted)` label; remove (× / context menu) stays available.
+- **Tools → Starred → Preferences…** menu item.
+
+### Changed
+
+- Internal Clean Code refactor: Favorites window split into reorder / ghost / drop-zone helpers; stores and JSON migrations extracted; shared row binder, text, paths, and golden `[Starred]` logs.
+
 ## [0.1.6] - 2026-04-27
 
 ### Fixed

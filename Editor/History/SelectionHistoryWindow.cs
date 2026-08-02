@@ -6,102 +6,89 @@ namespace Kynesis.Starred.Editor
     using UnityEngine.SceneManagement;
     using UnityEngine.UIElements;
 
-    /// <summary>
-    /// Auto-populated list of the last Project assets and scene GameObjects the
-    /// user selected. Click the star to promote an entry into Favorites.
-    /// </summary>
     public class SelectionHistoryWindow : EditorWindow, IHasCustomMenu
     {
         private VisualElement _list;
         private Label _emptyState;
-
-        // Press state — set when a row is clicked, consumed on release to
-        // apply Selection. No drag-out: history is read-only navigation.
         private bool _pressed;
         private Object _pressSelectTarget;
 
-        [MenuItem("Tools/Starred/History")]
+        [MenuItem(StarredText.HistoryMenuPath, false, 2)]
         public static void Open()
         {
-            var window = GetWindow<SelectionHistoryWindow>();
-            window.titleContent = new GUIContent("History", EditorGUIUtility.IconContent("d_UnityEditor.HistoryWindow").image);
+            SelectionHistoryWindow window = GetWindow<SelectionHistoryWindow>();
+            window.titleContent = new GUIContent(StarredText.History, EditorGUIUtility.IconContent("d_UnityEditor.HistoryWindow").image);
             window.minSize = new Vector2(220, 200);
             window.Show();
         }
 
         private void OnEnable()
         {
-            SelectionHistoryPreferences.Changed += Rebuild;
-            FavoriteAssetsPreferences.Changed   += Rebuild;
-            Selection.selectionChanged          += ApplyCurrentHighlight;
-            AssetChangeNotifier.Changed         += Rebuild;
-            EditorApplication.hierarchyChanged  += Rebuild;
+            SelectionHistoryStore.Changed += Rebuild;
+            FavoriteAssetsStore.Changed += Rebuild;
+            Selection.selectionChanged += ApplyCurrentHighlight;
+            AssetChangeNotifier.Changed += Rebuild;
+            EditorApplication.hierarchyChanged += Rebuild;
 
-            EditorSceneManager.sceneOpened                  += OnSceneOpened;
-            EditorSceneManager.sceneClosed                  += OnSceneClosed;
+            EditorSceneManager.sceneOpened += OnSceneOpened;
+            EditorSceneManager.sceneClosed += OnSceneClosed;
             EditorSceneManager.activeSceneChangedInEditMode += OnActiveSceneChanged;
-            PrefabStage.prefabStageOpened  += OnPrefabStageChanged;
+            PrefabStage.prefabStageOpened += OnPrefabStageChanged;
             PrefabStage.prefabStageClosing += OnPrefabStageChanged;
         }
 
         private void OnDisable()
         {
-            SelectionHistoryPreferences.Changed -= Rebuild;
-            FavoriteAssetsPreferences.Changed   -= Rebuild;
-            Selection.selectionChanged          -= ApplyCurrentHighlight;
-            AssetChangeNotifier.Changed         -= Rebuild;
-            EditorApplication.hierarchyChanged  -= Rebuild;
+            SelectionHistoryStore.Changed -= Rebuild;
+            FavoriteAssetsStore.Changed -= Rebuild;
+            Selection.selectionChanged -= ApplyCurrentHighlight;
+            AssetChangeNotifier.Changed -= Rebuild;
+            EditorApplication.hierarchyChanged -= Rebuild;
 
-            EditorSceneManager.sceneOpened                  -= OnSceneOpened;
-            EditorSceneManager.sceneClosed                  -= OnSceneClosed;
+            EditorSceneManager.sceneOpened -= OnSceneOpened;
+            EditorSceneManager.sceneClosed -= OnSceneClosed;
             EditorSceneManager.activeSceneChangedInEditMode -= OnActiveSceneChanged;
-            PrefabStage.prefabStageOpened  -= OnPrefabStageChanged;
+            PrefabStage.prefabStageOpened -= OnPrefabStageChanged;
             PrefabStage.prefabStageClosing -= OnPrefabStageChanged;
         }
 
         public void AddItemsToMenu(GenericMenu menu)
         {
-            var currentMax = FavoriteAssetsSettings.MaxHistoryEntries;
-            foreach (var choice in FavoriteAssetsSettings.MaxHistoryEntriesChoices)
+            int currentMax = FavoriteAssetsSettings.MaxHistoryEntries;
+            foreach (int choice in FavoriteAssetsSettings.MaxHistoryEntriesChoices)
             {
-                var capturedChoice = choice;
-                menu.AddItem(new GUIContent($"Max entries/{choice}"), currentMax == choice,
+                int capturedChoice = choice;
+                menu.AddItem(new GUIContent($"{StarredText.MaxEntriesPrefix}{choice}"), currentMax == choice,
                     () => FavoriteAssetsSettings.MaxHistoryEntries = capturedChoice);
             }
             menu.AddSeparator("");
 
-            if (SelectionHistoryPreferences.Entries.Count > 0)
-                menu.AddItem(new GUIContent("Clear history"), false, SelectionHistoryPreferences.Clear);
+            if (SelectionHistoryStore.Entries.Count > 0)
+                menu.AddItem(new GUIContent(StarredText.ClearHistory), false, SelectionHistoryStore.Clear);
             else
-                menu.AddDisabledItem(new GUIContent("Clear history"));
+                menu.AddDisabledItem(new GUIContent(StarredText.ClearHistory));
 
             menu.AddSeparator("");
-            menu.AddItem(new GUIContent("Open Preferences…"), false,
-                () => SettingsService.OpenUserPreferences(FavoriteAssetsSettings.SettingsPath));
+            menu.AddItem(new GUIContent(StarredText.OpenPreferences), false, FavoriteAssetsSettings.OpenPreferences);
         }
 
-        private void OnSceneOpened(Scene scene, OpenSceneMode _)  => Rebuild();
-        private void OnSceneClosed(Scene scene)                   => Rebuild();
-        private void OnActiveSceneChanged(Scene prev, Scene next) => Rebuild();
-        private void OnPrefabStageChanged(PrefabStage stage)      => Rebuild();
+        private void OnSceneOpened(Scene scene, OpenSceneMode _) => Rebuild();
+        private void OnSceneClosed(Scene scene) => Rebuild();
+        private void OnActiveSceneChanged(Scene previous, Scene next) => Rebuild();
+        private void OnPrefabStageChanged(PrefabStage stage) => Rebuild();
 
         private void CreateGUI()
         {
-            var uxml = AssetTrayPaths.Find<VisualTreeAsset>("SelectionHistoryWindow.uxml");
-            var uss  = AssetTrayPaths.Find<StyleSheet>("AssetTray.uss");
-            uxml.CloneTree(rootVisualElement);
-            rootVisualElement.styleSheets.Add(uss);
+            VisualTreeAsset visualTree = AssetTrayPaths.Find<VisualTreeAsset>(StarredPaths.HistoryWindow);
+            StyleSheet styleSheet = AssetTrayPaths.Find<StyleSheet>(StarredPaths.TrayStyles);
+            visualTree.CloneTree(rootVisualElement);
+            rootVisualElement.styleSheets.Add(styleSheet);
 
-            _list       = rootVisualElement.Q<VisualElement>("list");
-            _emptyState = rootVisualElement.Q<Label>("empty-state");
+            _list = rootVisualElement.Q<VisualElement>(StarredPaths.List);
+            _emptyState = rootVisualElement.Q<Label>(StarredPaths.EmptyState);
 
             rootVisualElement.pickingMode = PickingMode.Position;
             rootVisualElement.focusable = true;
-
-            // Press / up handled at the root so pointer capture (which fails
-            // silently during Unity's focus transition on both 2022 and 6)
-            // isn't in the path. TrickleDown on Down/Up also keeps child
-            // buttons from swallowing the events.
             rootVisualElement.RegisterCallback<PointerDownEvent>(OnRootPointerDown, TrickleDown.TrickleDown);
             rootVisualElement.RegisterCallback<PointerUpEvent>(OnRootPointerUp, TrickleDown.TrickleDown);
 
@@ -110,23 +97,23 @@ namespace Kynesis.Starred.Editor
             Rebuild();
         }
 
-        private void OnRootPointerDown(PointerDownEvent evt)
+        private void OnRootPointerDown(PointerDownEvent pointerDownEvent)
         {
             if (focusedWindow != this) Focus();
 
-            if (evt.button != 0) return;
-            if (evt.target is Button) return;
+            if (pointerDownEvent.button != 0) return;
+            if (pointerDownEvent.target is Button) return;
 
-            var row = FindRowAncestor(evt.target as VisualElement);
+            VisualElement row = TrayRowBinder.FindRowAncestor(pointerDownEvent.target as VisualElement);
             if (row?.userData is not FavoriteEntry entry) return;
 
-            var binding = BindFor(entry);
+            TrayRowBinding binding = TrayRowBinder.BindFor(entry, useHistorySelection: true);
             if (binding == null) return;
 
-            if (evt.clickCount == 2)
+            if (pointerDownEvent.clickCount == 2)
             {
                 binding.OnDoubleClick();
-                evt.StopPropagation();
+                pointerDownEvent.StopPropagation();
                 return;
             }
 
@@ -134,40 +121,37 @@ namespace Kynesis.Starred.Editor
             _pressSelectTarget = binding.SelectTarget;
         }
 
-        // IMGUI reliably receives input on unfocused EditorWindows (that's how
-        // Unity's Project / Hierarchy work on first click), so we use it as a
-        // safety net for the initial press.
         private void RegisterImguiPressFallback()
         {
-            var fallback = new IMGUIContainer(OnImguiPress);
+            IMGUIContainer fallback = new IMGUIContainer(OnImguiPress);
             fallback.style.position = Position.Absolute;
-            fallback.style.left     = 0;
-            fallback.style.right    = 0;
-            fallback.style.top      = 0;
-            fallback.style.bottom   = 0;
-            fallback.pickingMode    = PickingMode.Ignore;
+            fallback.style.left = 0;
+            fallback.style.right = 0;
+            fallback.style.top = 0;
+            fallback.style.bottom = 0;
+            fallback.pickingMode = PickingMode.Ignore;
             rootVisualElement.Insert(0, fallback);
         }
 
         private void OnImguiPress()
         {
-            var evt = Event.current;
-            if (evt == null) return;
-            if (evt.type != EventType.MouseDown || evt.button != 0) return;
+            Event imguiEvent = Event.current;
+            if (imguiEvent == null) return;
+            if (imguiEvent.type != EventType.MouseDown || imguiEvent.button != 0) return;
 
             if (_pressed) return;
             if (focusedWindow != this) Focus();
 
-            var target = rootVisualElement.panel?.Pick(evt.mousePosition);
+            VisualElement target = rootVisualElement.panel?.Pick(imguiEvent.mousePosition);
             if (target is Button) return;
 
-            var row = FindRowAncestor(target);
+            VisualElement row = TrayRowBinder.FindRowAncestor(target);
             if (row?.userData is not FavoriteEntry entry) return;
 
-            var binding = BindFor(entry);
+            TrayRowBinding binding = TrayRowBinder.BindFor(entry, useHistorySelection: true);
             if (binding == null) return;
 
-            if (evt.clickCount == 2)
+            if (imguiEvent.clickCount == 2)
             {
                 binding.OnDoubleClick();
                 return;
@@ -177,58 +161,13 @@ namespace Kynesis.Starred.Editor
             _pressSelectTarget = binding.SelectTarget;
         }
 
-        private static VisualElement FindRowAncestor(VisualElement element)
-        {
-            while (element != null && element.userData is not FavoriteEntry)
-                element = element.parent;
-            return element;
-        }
-
-        private sealed class RowBinding
-        {
-            public Object SelectTarget;
-            public System.Action OnDoubleClick;
-        }
-
-        private static RowBinding BindFor(FavoriteEntry entry)
-        {
-            if (entry.IsAsset)
-            {
-                var path = AssetDatabase.GUIDToAssetPath(entry.Guid);
-                var asset = string.IsNullOrEmpty(path) ? null : AssetDatabase.LoadMainAssetAtPath(path);
-                if (asset == null) return null;
-                return new RowBinding
-                {
-                    SelectTarget = asset,
-                    OnDoubleClick = () => AssetDatabase.OpenAsset(asset),
-                };
-            }
-
-            if (entry.IsSceneObject)
-            {
-                var go = SceneObjectResolver.Find(entry);
-                if (go == null) return null;
-                return new RowBinding
-                {
-                    SelectTarget = go,
-                    OnDoubleClick = () => { SelectionHistoryTracker.Select(go); SceneView.FrameLastActiveSceneView(); },
-                };
-            }
-
-            return null;
-        }
-
-        private void OnRootPointerUp(PointerUpEvent evt)
+        private void OnRootPointerUp(PointerUpEvent pointerUpEvent)
         {
             if (!_pressed) return;
-            // Ignore the synthetic release UITK fires during focus transitions
-            // (see the matching guard in FavoriteAssetsWindow).
-            if ((evt.pressedButtons & 1) != 0) return;
-            if (evt.button != 0) return;
+            if ((pointerUpEvent.pressedButtons & 1) != 0) return;
+            if (pointerUpEvent.button != 0) return;
 
-            // Select on release — Selection.selectionChanged on press would
-            // repaint mid-click and feel jumpy.
-            if (_pressSelectTarget != null) SelectionHistoryTracker.Select(_pressSelectTarget);
+            if (_pressSelectTarget != null) SelectionHistoryTracker.SelectWithoutRecording(_pressSelectTarget);
 
             ResetPress();
         }
@@ -244,19 +183,21 @@ namespace Kynesis.Starred.Editor
             if (_list == null) return;
             _list.Clear();
 
-            var renderedCount = 0;
-            foreach (var entry in SelectionHistoryPreferences.Entries)
+            int renderedCount = 0;
+            foreach (FavoriteEntry entry in SelectionHistoryStore.Entries)
             {
-                var row = CreateRow(entry);
-                if (row == null) continue;  // scene entry whose context isn't active
+                VisualElement row = CreateRow(entry);
+                if (row == null) continue;
                 _list.Add(row);
                 renderedCount++;
             }
 
             _emptyState.style.display = renderedCount == 0 ? DisplayStyle.Flex : DisplayStyle.None;
 
-            ApplyCurrentHighlight();
+            TrayRowBinder.ApplyEntryHighlight(_list);
         }
+
+        private void ApplyCurrentHighlight() => TrayRowBinder.ApplyEntryHighlight(_list);
 
         private VisualElement CreateRow(FavoriteEntry entry)
         {
@@ -267,51 +208,56 @@ namespace Kynesis.Starred.Editor
 
         private VisualElement CreateAssetRow(FavoriteEntry entry)
         {
-            var row = AssetTrayRow.CreateAssetRow(entry.Guid, out var asset, out var path, userData: entry);
-            if (asset == null) return row;
+            VisualElement row = AssetTrayRow.CreateAssetRow(entry.Guid, out UnityEngine.Object asset, out string path, userData: entry);
 
-            row.Add(AssetTrayRow.CreatePingButton(() =>
+            if (asset != null)
             {
-                EditorGUIUtility.PingObject(asset);
-                SelectionHistoryTracker.Select(asset);
-            }));
+                row.Add(AssetTrayRow.CreatePingButton(() =>
+                {
+                    EditorGUIUtility.PingObject(asset);
+                    SelectionHistoryTracker.SelectWithoutRecording(asset);
+                }));
+            }
+
             row.Add(CreateStarButton(entry));
-
-            row.AddManipulator(new ContextualMenuManipulator(evt =>
+            row.AddManipulator(new ContextualMenuManipulator(menuEvent =>
             {
-                AppendStarMenuEntry(evt.menu, entry);
-                evt.menu.AppendSeparator("");
-                AssetTrayRow.AppendAssetContextMenu(evt.menu, asset, entry.Guid, path);
+                AppendStarMenuEntry(menuEvent.menu, entry);
+                if (asset != null)
+                {
+                    menuEvent.menu.AppendSeparator("");
+                    AssetTrayRow.AppendAssetContextMenu(menuEvent.menu, asset, entry.Guid, path);
+                }
             }));
             return row;
         }
 
         private VisualElement CreateSceneObjectRow(FavoriteEntry entry)
         {
-            var row = AssetTrayRow.CreateSceneObjectRow(entry, out var go);
+            VisualElement row = AssetTrayRow.CreateSceneObjectRow(entry, out GameObject gameObject);
             if (row == null) return null;
 
-            if (go != null)
+            if (gameObject != null)
             {
                 row.Add(AssetTrayRow.CreatePingButton(() =>
                 {
-                    EditorGUIUtility.PingObject(go);
-                    SelectionHistoryTracker.Select(go);
+                    EditorGUIUtility.PingObject(gameObject);
+                    SelectionHistoryTracker.SelectWithoutRecording(gameObject);
                 }));
                 row.Add(CreateStarButton(entry));
 
-                row.AddManipulator(new ContextualMenuManipulator(evt =>
+                row.AddManipulator(new ContextualMenuManipulator(menuEvent =>
                 {
-                    AppendStarMenuEntry(evt.menu, entry);
-                    evt.menu.AppendSeparator("");
-                    evt.menu.AppendAction("Show in Hierarchy", _ =>
+                    AppendStarMenuEntry(menuEvent.menu, entry);
+                    menuEvent.menu.AppendSeparator("");
+                    menuEvent.menu.AppendAction(StarredText.ShowInHierarchy, _ =>
                     {
-                        EditorGUIUtility.PingObject(go);
-                        SelectionHistoryTracker.Select(go);
+                        EditorGUIUtility.PingObject(gameObject);
+                        SelectionHistoryTracker.SelectWithoutRecording(gameObject);
                     });
-                    evt.menu.AppendAction("Frame in Scene View", _ =>
+                    menuEvent.menu.AppendAction(StarredText.FrameInSceneView, _ =>
                     {
-                        SelectionHistoryTracker.Select(go);
+                        SelectionHistoryTracker.SelectWithoutRecording(gameObject);
                         SceneView.FrameLastActiveSceneView();
                     });
                 }));
@@ -325,42 +271,23 @@ namespace Kynesis.Starred.Editor
 
         private static Button CreateStarButton(FavoriteEntry entry)
         {
-            var isFav = FavoriteAssetsPreferences.Contains(entry);
-            var btn = new Button(() => FavoriteAssetsPreferences.Toggle(entry))
+            bool isFavorite = FavoriteAssetsStore.Contains(entry);
+            Button button = new Button(() => FavoriteAssetsStore.Toggle(entry))
             {
-                text = isFav ? "\u2605" : "\u2606",
-                tooltip = isFav ? "Remove from Favorites" : "Add to Favorites",
+                text = isFavorite ? "\u2605" : "\u2606",
+                tooltip = isFavorite ? StarredText.RemoveFromFavorites : StarredText.AddToFavorites,
             };
-            btn.AddToClassList(AssetTrayRow.Classes.Action);
-            btn.AddToClassList("assettray-row-action--star");
-            if (isFav) btn.AddToClassList("assettray-row-action--star-on");
-            return btn;
+            button.AddToClassList(AssetTrayRow.Classes.Action);
+            button.AddToClassList(AssetTrayRow.Classes.ActionStar);
+            if (isFavorite) button.AddToClassList(AssetTrayRow.Classes.ActionStarOn);
+            return button;
         }
 
         private static void AppendStarMenuEntry(DropdownMenu menu, FavoriteEntry entry)
         {
-            var isFav = FavoriteAssetsPreferences.Contains(entry);
-            menu.AppendAction(isFav ? "Remove from Favorites" : "Add to Favorites",
-                _ => FavoriteAssetsPreferences.Toggle(entry));
-        }
-
-        private void ApplyCurrentHighlight()
-        {
-            var selectedGuid = AssetTrayRow.GetCurrentSelectionGuid();
-            var selectedGo   = Selection.activeGameObject;
-            // Compute the selection's GlobalObjectId once — GetGlobalObjectIdSlow
-            // is a slow call (per its name), and the highlight predicate runs
-            // for every visible row.
-            var selectedGoId = selectedGo != null ? SceneObjectResolver.GetGlobalObjectId(selectedGo) : null;
-
-            AssetTrayRow.ApplyCurrentHighlight(_list, data =>
-            {
-                if (data is not FavoriteEntry entry) return false;
-                if (entry.IsAsset) return entry.Guid == selectedGuid;
-                if (entry.IsSceneObject && !string.IsNullOrEmpty(selectedGoId))
-                    return entry.GlobalObjectId == selectedGoId;
-                return false;
-            });
+            bool isFavorite = FavoriteAssetsStore.Contains(entry);
+            menu.AppendAction(isFavorite ? StarredText.RemoveFromFavorites : StarredText.AddToFavorites,
+                _ => FavoriteAssetsStore.Toggle(entry));
         }
     }
 }

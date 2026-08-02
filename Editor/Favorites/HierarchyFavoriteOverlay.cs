@@ -8,7 +8,6 @@ namespace Kynesis.Starred.Editor
     {
         static HierarchyFavoriteOverlay()
         {
-            // Domain reload re-runs this ctor; guard against double-registration.
 #if UNITY_6000_0_OR_NEWER
             EditorApplication.hierarchyWindowItemByEntityIdOnGUI -= OnItemGUI;
             EditorApplication.hierarchyWindowItemByEntityIdOnGUI += OnItemGUI;
@@ -17,8 +16,8 @@ namespace Kynesis.Starred.Editor
             EditorApplication.hierarchyWindowItemOnGUI += OnItemGUI;
 #endif
 
-            FavoriteAssetsPreferences.Changed -= EditorApplication.RepaintHierarchyWindow;
-            FavoriteAssetsPreferences.Changed += EditorApplication.RepaintHierarchyWindow;
+            FavoriteAssetsStore.Changed -= EditorApplication.RepaintHierarchyWindow;
+            FavoriteAssetsStore.Changed += EditorApplication.RepaintHierarchyWindow;
         }
 
 #if UNITY_6000_0_OR_NEWER
@@ -29,25 +28,18 @@ namespace Kynesis.Starred.Editor
             => DrawOverlay(EditorUtility.InstanceIDToObject(instanceId), selectionRect);
 #endif
 
-        private static void DrawOverlay(UnityEngine.Object obj, Rect selectionRect)
+        private static void DrawOverlay(UnityEngine.Object unityObject, Rect selectionRect)
         {
             if (!FavoriteAssetsSettings.ShowHierarchyStar) return;
-            if (!FavoriteAssetsPreferences.HasAnySceneObject) return;
+            if (!FavoriteAssetsStore.HasAnySceneObject) return;
 
-            if (obj is not GameObject go) return;
+            if (unityObject is not GameObject gameObject) return;
 
-            var globalObjectId = SceneObjectResolver.GetGlobalObjectId(go);
+            string globalObjectId = SceneObjectResolver.GetGlobalObjectId(gameObject);
             if (string.IsNullOrEmpty(globalObjectId)) return;
-            if (!FavoriteAssetsPreferences.ContainsSceneObject(globalObjectId)) return;
+            if (!FavoriteAssetsStore.ContainsSceneObject(globalObjectId)) return;
 
-            var starRect = FavoriteStarDrawer.Draw(selectionRect);
-
-            var e = Event.current;
-            if (e.type == EventType.MouseDown && e.button == 0 && starRect.Contains(e.mousePosition))
-            {
-                FavoriteAssetsPreferences.RemoveSceneObject(globalObjectId);
-                e.Use();
-            }
+            FavoriteStarHitTest.DrawAndHandleClick(selectionRect, () => FavoriteAssetsStore.RemoveSceneObject(globalObjectId));
         }
     }
 }

@@ -66,7 +66,8 @@
     background-color: rgba(255, 255, 255, 0.06);
 }
 
-.assettray-overlay-active .assettray-row:hover {
+.assettray-overlay-active .assettray-row:hover,
+.assettray-with-drag .assettray-row:hover {
     background-color: rgba(0, 0, 0, 0);
 }
 
@@ -80,15 +81,7 @@
 }
 
 .assettray-row--dragging {
-    /* Original row hidden via visibility — the ghost element is what the
-       user sees following the cursor. */
     visibility: hidden;
-}
-
-/* While a reorder is in progress, no other row should react to hover —
-   the ghost owns the cursor's visual focus. */
-.assettray-with-drag .assettray-row:hover {
-    background-color: rgba(0, 0, 0, 0);
 }
 
 .assettray-drag-ghost {
@@ -101,7 +94,6 @@
     border-top-width: 1px;
     border-bottom-width: 1px;
     overflow: hidden;
-    /* Ghost tracks the cursor 1:1; no transition or it lags behind. */
     transition-duration: 0s;
 }
 
@@ -171,8 +163,6 @@
     font-size: 14px;
 }
 
-/* Mirror Unity's Hierarchy disabled-object treatment so a deactivated
-   scene GameObject reads as inactive in the favorites tray too. */
 .assettray-row--inactive .assettray-row-label,
 .assettray-row--inactive .assettray-row-context-label,
 .assettray-row--inactive .assettray-row-context-separator {
@@ -223,4 +213,3 @@
     margin-top: 4px;
     margin-bottom: 4px;
 }
-

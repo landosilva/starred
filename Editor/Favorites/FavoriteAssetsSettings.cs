@@ -1,13 +1,15 @@
 namespace Kynesis.Starred.Editor
 {
     using System;
-    using System.Collections.Generic;
     using UnityEditor;
-    using UnityEngine;
 
     internal static class FavoriteAssetsSettings
     {
         public const string SettingsPath = "Preferences/Starred";
+
+        [MenuItem(StarredText.PreferencesMenuPath, false, 50)]
+        public static void OpenPreferences() =>
+            SettingsService.OpenUserPreferences(SettingsPath);
 
         private const string ShowProjectWindowStarKey = "FavoriteAssets.ShowProjectWindowStar";
         private const string ShowHierarchyStarKey     = "FavoriteAssets.ShowHierarchyStar";
@@ -53,81 +55,5 @@ namespace Kynesis.Starred.Editor
         }
 
         public static readonly int[] MaxHistoryEntriesChoices = { 4, 8, 16, 32 };
-        private static readonly GUIContent[] MaxHistoryLabels =
-        {
-            new("4"), new("8"), new("16"), new("32"),
-        };
-
-        [SettingsProvider]
-        public static SettingsProvider CreateProvider()
-        {
-            return new SettingsProvider(SettingsPath, SettingsScope.User)
-            {
-                label = "Starred",
-                keywords = new HashSet<string> { "starred", "favorite", "favorites", "star", "project", "history", "selection" },
-                guiHandler = _ => OnGUI(),
-            };
-        }
-
-        private static void OnGUI()
-        {
-            var previousLabelWidth = EditorGUIUtility.labelWidth;
-            EditorGUIUtility.labelWidth = 250f;
-            try
-            {
-                DrawSectionHeader("Favorites", "Tools → Starred → Favorites");
-                using (new EditorGUI.IndentLevelScope())
-                {
-                    ShowProjectWindowStar = EditorGUILayout.Toggle(
-                        new GUIContent("Show star in Project window",
-                            "Draws a small gold star on favorited assets in the Project window. Click the star to remove the favorite."),
-                        ShowProjectWindowStar);
-
-                    ShowHierarchyStar = EditorGUILayout.Toggle(
-                        new GUIContent("Show star in Hierarchy",
-                            "Draws a small gold star on favorited GameObjects in the Hierarchy. Click the star to remove the favorite."),
-                        ShowHierarchyStar);
-                }
-
-                EditorGUILayout.Space(6f);
-
-                DrawSectionHeader("History", "Tools → Starred → History");
-                using (new EditorGUI.IndentLevelScope())
-                {
-                    MaxHistoryEntries = EditorGUILayout.IntPopup(
-                        new GUIContent("Selection history max entries",
-                            "Maximum number of recent selections the Selection History window remembers."),
-                        MaxHistoryEntries,
-                        MaxHistoryLabels,
-                        MaxHistoryEntriesChoices);
-                }
-            }
-            finally
-            {
-                EditorGUIUtility.labelWidth = previousLabelWidth;
-            }
-        }
-
-        private static GUIStyle _pathStyle;
-
-        private static GUIStyle PathStyle
-        {
-            get
-            {
-                if (_pathStyle != null) return _pathStyle;
-                _pathStyle = new GUIStyle(EditorStyles.miniLabel)
-                {
-                    fontStyle = FontStyle.Italic,
-                    wordWrap = false,
-                };
-                return _pathStyle;
-            }
-        }
-
-        private static void DrawSectionHeader(string title, string menuPath)
-        {
-            EditorGUILayout.LabelField(title, EditorStyles.boldLabel);
-            EditorGUILayout.LabelField(menuPath, PathStyle);
-        }
     }
 }

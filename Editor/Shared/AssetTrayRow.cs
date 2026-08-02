@@ -5,35 +5,47 @@ namespace Kynesis.Starred.Editor
     using UnityEngine;
     using UnityEngine.UIElements;
 
-    /// <summary>
-    /// Shared row-construction helpers used by both the Favorites window and the
-    /// Selection History window. Keeps visuals and behaviour in sync.
-    /// </summary>
     internal static class AssetTrayRow
     {
         internal static class Classes
         {
-            public const string Row     = "assettray-row";
-            public const string Icon    = "assettray-row-icon";
-            public const string Label   = "assettray-row-label";
-            public const string Ping    = "assettray-row-ping";
-            public const string Action  = "assettray-row-action";
+            public const string Row = "assettray-row";
+            public const string Icon = "assettray-row-icon";
+            public const string Label = "assettray-row-label";
+            public const string Ping = "assettray-row-ping";
+            public const string Action = "assettray-row-action";
             public const string Missing = "assettray-row--missing";
             public const string Current = "assettray-row--current";
+            public const string Inactive = "assettray-row--inactive";
+            public const string ContextIcon = "assettray-row-context-icon";
+            public const string ContextLabel = "assettray-row-context-label";
+            public const string ContextSeparator = "assettray-row-context-separator";
+            public const string Dragging = "assettray-row--dragging";
+            public const string WithDrag = "assettray-with-drag";
+            public const string ListDragOver = "assettray-list--drag-over";
+            public const string DragGhost = "assettray-drag-ghost";
+            public const string AddOverlay = "assettray-add-overlay";
+            public const string AddOverlayLabel = "assettray-add-overlay-label";
+            public const string AddOverlayDuplicate = "assettray-add-overlay--duplicate";
+            public const string OverlayActive = "assettray-overlay-active";
+            public const string Separator = "assettray-separator";
+            public const string ActionRemove = "assettray-row-action--remove";
+            public const string ActionStar = "assettray-row-action--star";
+            public const string ActionStarOn = "assettray-row-action--star-on";
         }
 
         public static VisualElement CreateShell(object userData, Texture icon, string labelText, string tooltip, bool missing)
         {
-            var row = new VisualElement();
+            VisualElement row = new VisualElement();
             row.AddToClassList(Classes.Row);
             row.userData = userData;
             if (missing) row.AddToClassList(Classes.Missing);
 
-            var iconElement = new Image { image = icon, scaleMode = ScaleMode.ScaleToFit };
+            Image iconElement = new Image { image = icon, scaleMode = ScaleMode.ScaleToFit };
             iconElement.AddToClassList(Classes.Icon);
             row.Add(iconElement);
 
-            var label = new Label(labelText) { tooltip = tooltip };
+            Label label = new Label(labelText) { tooltip = tooltip };
             label.AddToClassList(Classes.Label);
             row.Add(label);
 
@@ -42,78 +54,75 @@ namespace Kynesis.Starred.Editor
 
         public static VisualElement CreateAssetRow(string guid, out UnityEngine.Object asset, out string path, object userData = null)
         {
-            path  = AssetDatabase.GUIDToAssetPath(guid);
+            path = AssetDatabase.GUIDToAssetPath(guid);
             asset = string.IsNullOrEmpty(path) ? null : AssetDatabase.LoadMainAssetAtPath(path);
+            FavoriteEntry entry = userData as FavoriteEntry;
 
-            var icon = asset != null
+            if (entry != null && asset != null)
+                EntryDisplayName.Capture(entry);
+
+            Texture icon = asset != null
                 ? AssetDatabase.GetCachedIcon(path)
-                : EditorGUIUtility.IconContent("console.warnicon.sml").image;
-            var labelText = asset != null
-                ? asset.name
-                : string.IsNullOrEmpty(path) ? "(unknown asset)" : "(deleted)";
-            var tooltip   = string.IsNullOrEmpty(path) ? $"Unknown GUID: {guid}" : path;
+                : EditorGUIUtility.IconContent(StarredPaths.WarningIcon).image;
+            string labelText = EntryDisplayName.Resolve(entry, asset, path);
+            string tooltip = asset != null
+                ? path
+                : string.IsNullOrEmpty(path)
+                    ? $"{StarredText.DeletedPrefix}GUID: {guid}"
+                    : $"{StarredText.DeletedPrefix}{path}";
 
             return CreateShell(userData ?? guid, icon, labelText, tooltip, asset == null);
         }
 
-        /// <summary>
-        /// Builds the visual shell for a scene-bound entry and resolves the
-        /// backing GameObject. Returns null if the entry's scene / prefab-stage
-        /// isn't the active context — callers should skip the row entirely in
-        /// that case.
-        /// </summary>
-        public static VisualElement CreateSceneObjectRow(FavoriteEntry entry, out GameObject go)
+        public static VisualElement CreateSceneObjectRow(FavoriteEntry entry, out GameObject gameObject)
         {
-            go = null;
+            gameObject = null;
             if (!SceneObjectResolver.IsSceneAvailable(entry.ScenePath)) return null;
 
-            go = SceneObjectResolver.Find(entry);
-            var objectName = go != null ? go.name : LastSegment(entry.HierarchyPath);
-            var tooltip    = $"{entry.ScenePath} → {entry.HierarchyPath}";
-            var objectIcon = go != null
-                ? EditorGUIUtility.ObjectContent(go, go.GetType()).image
-                : EditorGUIUtility.IconContent("console.warnicon.sml").image;
+            gameObject = SceneObjectResolver.Find(entry);
+            if (gameObject != null) EntryDisplayName.Capture(entry);
 
-            var isPrefabStage = string.Equals(System.IO.Path.GetExtension(entry.ScenePath), ".prefab",
+            string objectName = EntryDisplayName.Resolve(entry, gameObject, null);
+            string tooltip = gameObject != null
+                ? $"{entry.ScenePath} → {entry.HierarchyPath}"
+                : $"{StarredText.DeletedPrefix}{entry.ScenePath} → {entry.HierarchyPath}";
+            Texture objectIcon = gameObject != null
+                ? EditorGUIUtility.ObjectContent(gameObject, gameObject.GetType()).image
+                : EditorGUIUtility.IconContent(StarredPaths.WarningIcon).image;
+
+            bool isPrefabStage = string.Equals(System.IO.Path.GetExtension(entry.ScenePath), ".prefab",
                 System.StringComparison.OrdinalIgnoreCase);
-            var contextIcon = EditorGUIUtility.IconContent(isPrefabStage ? "Prefab Icon" : "SceneAsset Icon").image;
-            var contextName = System.IO.Path.GetFileNameWithoutExtension(entry.ScenePath);
+            Texture contextIcon = EditorGUIUtility.IconContent(isPrefabStage ? "Prefab Icon" : "SceneAsset Icon").image;
+            string contextName = System.IO.Path.GetFileNameWithoutExtension(entry.ScenePath);
 
-            var row = new VisualElement();
+            VisualElement row = new VisualElement();
             row.AddToClassList(Classes.Row);
             row.userData = entry;
-            if (go == null) row.AddToClassList(Classes.Missing);
-            else if (!go.activeInHierarchy) row.AddToClassList("assettray-row--inactive");
+            if (gameObject == null) row.AddToClassList(Classes.Missing);
+            else if (!gameObject.activeInHierarchy) row.AddToClassList(Classes.Inactive);
 
-            var ctxIcon = new Image { image = contextIcon, scaleMode = ScaleMode.ScaleToFit };
-            ctxIcon.AddToClassList(Classes.Icon);
-            ctxIcon.AddToClassList("assettray-row-context-icon");
-            row.Add(ctxIcon);
+            Image contextIconElement = new Image { image = contextIcon, scaleMode = ScaleMode.ScaleToFit };
+            contextIconElement.AddToClassList(Classes.Icon);
+            contextIconElement.AddToClassList(Classes.ContextIcon);
+            row.Add(contextIconElement);
 
-            var ctxLabel = new Label(contextName);
-            ctxLabel.AddToClassList("assettray-row-context-label");
-            row.Add(ctxLabel);
+            Label contextLabelElement = new Label(contextName);
+            contextLabelElement.AddToClassList(Classes.ContextLabel);
+            row.Add(contextLabelElement);
 
-            var separator = new Label("›");
-            separator.AddToClassList("assettray-row-context-separator");
+            Label separator = new Label("›");
+            separator.AddToClassList(Classes.ContextSeparator);
             row.Add(separator);
 
-            var mainIcon = new Image { image = objectIcon, scaleMode = ScaleMode.ScaleToFit };
+            Image mainIcon = new Image { image = objectIcon, scaleMode = ScaleMode.ScaleToFit };
             mainIcon.AddToClassList(Classes.Icon);
             row.Add(mainIcon);
 
-            var mainLabel = new Label(objectName) { tooltip = tooltip };
+            Label mainLabel = new Label(objectName) { tooltip = tooltip };
             mainLabel.AddToClassList(Classes.Label);
             row.Add(mainLabel);
 
             return row;
-        }
-
-        private static string LastSegment(string path)
-        {
-            if (string.IsNullOrEmpty(path)) return "(empty)";
-            var slash = path.LastIndexOf('/');
-            return slash < 0 ? path : path.Substring(slash + 1);
         }
 
         public static Button CreatePingButton(UnityEngine.Object asset)
@@ -127,40 +136,38 @@ namespace Kynesis.Starred.Editor
 
         public static Button CreatePingButton(Action onClick)
         {
-            var btn = new Button(onClick) { tooltip = "Show in Project" };
-            btn.AddToClassList(Classes.Ping);
-            btn.Add(new Image { image = EditorGUIUtility.IconContent("d_Search Icon").image });
-            return btn;
+            Button button = new Button(onClick) { tooltip = StarredText.ShowInProject };
+            button.AddToClassList(Classes.Ping);
+            button.Add(new Image { image = EditorGUIUtility.IconContent("d_Search Icon").image });
+            return button;
         }
-
 
         public static void AppendAssetContextMenu(DropdownMenu menu, UnityEngine.Object asset, string guid, string path)
         {
-            menu.AppendAction("Show in Project", _ => { EditorGUIUtility.PingObject(asset); Selection.activeObject = asset; });
-            menu.AppendAction("Show in Explorer", _ => EditorUtility.RevealInFinder(path));
-            menu.AppendAction("Open", _ => AssetDatabase.OpenAsset(asset));
+            menu.AppendAction(StarredText.ShowInProject, _ => { EditorGUIUtility.PingObject(asset); Selection.activeObject = asset; });
+            menu.AppendAction(StarredText.ShowInExplorer, _ => EditorUtility.RevealInFinder(path));
+            menu.AppendAction(StarredText.Open, _ => AssetDatabase.OpenAsset(asset));
             menu.AppendSeparator("");
-            menu.AppendAction("Copy Path", _ => EditorGUIUtility.systemCopyBuffer = path);
-            menu.AppendAction("Copy GUID", _ => EditorGUIUtility.systemCopyBuffer = guid);
+            menu.AppendAction(StarredText.CopyPath, _ => EditorGUIUtility.systemCopyBuffer = path);
+            menu.AppendAction(StarredText.CopyGuid, _ => EditorGUIUtility.systemCopyBuffer = guid);
         }
 
         public static string GetCurrentSelectionGuid()
         {
-            var active = Selection.activeObject;
+            UnityEngine.Object active = Selection.activeObject;
             if (active == null) return null;
-            var path = AssetDatabase.GetAssetPath(active);
+            string path = AssetDatabase.GetAssetPath(active);
             return string.IsNullOrEmpty(path) ? null : AssetDatabase.AssetPathToGUID(path);
         }
 
         public static void ApplyCurrentHighlight(VisualElement list, Func<object, bool> isCurrent)
         {
             if (list == null) return;
-            foreach (var child in list.Children())
+            foreach (VisualElement child in list.Children())
             {
                 if (child.userData == null) continue;
                 child.EnableInClassList(Classes.Current, isCurrent(child.userData));
             }
         }
-
     }
 }

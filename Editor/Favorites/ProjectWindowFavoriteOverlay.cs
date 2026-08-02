@@ -8,28 +8,20 @@ namespace Kynesis.Starred.Editor
     {
         static ProjectWindowFavoriteOverlay()
         {
-            // Domain reload re-runs this ctor; guard against double-registration.
             EditorApplication.projectWindowItemOnGUI -= OnItemGUI;
             EditorApplication.projectWindowItemOnGUI += OnItemGUI;
 
-            FavoriteAssetsPreferences.Changed -= EditorApplication.RepaintProjectWindow;
-            FavoriteAssetsPreferences.Changed += EditorApplication.RepaintProjectWindow;
+            FavoriteAssetsStore.Changed -= EditorApplication.RepaintProjectWindow;
+            FavoriteAssetsStore.Changed += EditorApplication.RepaintProjectWindow;
         }
 
         private static void OnItemGUI(string guid, Rect selectionRect)
         {
             if (string.IsNullOrEmpty(guid)) return;
             if (!FavoriteAssetsSettings.ShowProjectWindowStar) return;
-            if (!FavoriteAssetsPreferences.Contains(guid)) return;
+            if (!FavoriteAssetsStore.Contains(guid)) return;
 
-            var starRect = FavoriteStarDrawer.Draw(selectionRect);
-
-            var e = Event.current;
-            if (e.type == EventType.MouseDown && e.button == 0 && starRect.Contains(e.mousePosition))
-            {
-                FavoriteAssetsPreferences.Remove(guid);
-                e.Use();
-            }
+            FavoriteStarHitTest.DrawAndHandleClick(selectionRect, () => FavoriteAssetsStore.Remove(guid));
         }
     }
 }

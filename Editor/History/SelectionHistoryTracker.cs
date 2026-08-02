@@ -14,23 +14,12 @@ namespace Kynesis.Starred.Editor
             Selection.selectionChanged += OnSelectionChanged;
         }
 
-        /// <summary>
-        /// Skip the next <c>Selection.selectionChanged</c> event — callers that
-        /// programmatically change the selection (e.g. clicking a row inside a
-        /// Starred window) use this so the click doesn't reshuffle history.
-        /// </summary>
-        public static void SuppressNext() => _suppressNext = true;
+        internal static void SuppressNext() => _suppressNext = true;
 
-        /// <summary>
-        /// Select <paramref name="target"/> without recording the change in the
-        /// history list. Use this when a click inside a history row just means
-        /// "navigate there" — the entry is already in the list and shouldn't
-        /// get re-ranked under the user's cursor.
-        /// </summary>
-        public static void Select(UnityEngine.Object target)
+        public static void SelectWithoutRecording(UnityEngine.Object target)
         {
             SuppressNext();
-            Selection.activeObject = target;
+            SelectionWithoutProjectJump.Select(target);
         }
 
         private static void OnSelectionChanged()
@@ -41,23 +30,23 @@ namespace Kynesis.Starred.Editor
                 return;
             }
 
-            var active = Selection.activeObject;
+            UnityEngine.Object active = Selection.activeObject;
             if (active == null) return;
 
-            var assetPath = AssetDatabase.GetAssetPath(active);
+            string assetPath = AssetDatabase.GetAssetPath(active);
             if (!string.IsNullOrEmpty(assetPath))
             {
-                var guid = AssetDatabase.AssetPathToGUID(assetPath);
+                string guid = AssetDatabase.AssetPathToGUID(assetPath);
                 if (!string.IsNullOrEmpty(guid))
-                    SelectionHistoryPreferences.Record(FavoriteEntry.ForAsset(guid));
+                    SelectionHistoryStore.Record(FavoriteEntry.ForAsset(guid));
                 return;
             }
 
-            if (active is GameObject go)
+            if (active is GameObject gameObject)
             {
-                var entry = SceneObjectResolver.BuildEntry(go);
-                if (entry == null || string.IsNullOrEmpty(entry.ScenePath)) return; // unsaved scene — skip
-                SelectionHistoryPreferences.Record(entry);
+                FavoriteEntry entry = SceneObjectResolver.BuildEntry(gameObject);
+                if (entry == null || string.IsNullOrEmpty(entry.ScenePath)) return;
+                SelectionHistoryStore.Record(entry);
             }
         }
     }
