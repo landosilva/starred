@@ -4,7 +4,7 @@
 
 # Starred
 
-**Favorites tray + selection history for the Unity Editor.**
+**Favorites tray and selection history for the Unity Editor.**
 
 [![Unity 2022.3+](https://img.shields.io/badge/Unity-2022.3%2B-000?logo=unity)](https://unity.com/releases/editor/qa/lts-releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE.md)
@@ -19,8 +19,27 @@
 
 ## Install
 
-**Package Manager (recommended):**
-**Window → Package Manager → + → Add package from git URL…**
+**Unity Asset Store:** [Starred](https://assetstore.unity.com/packages/tools/utilities/starred-376068)
+
+**OpenUPM (recommended for updates):** Installs through Package Manager so you get **Updates** and version history. A plain git URL install does not.
+
+Via [openupm-cli](https://openupm.com/docs/getting-started.html):
+
+```
+openupm add com.kynesis.starred
+```
+
+Or add the OpenUPM scoped registry, then install `com.kynesis.starred` from Package Manager:
+
+| | |
+| --- | --- |
+| Name | `package.openupm.com` |
+| URL | `https://package.openupm.com` |
+| Scope | `com.kynesis` |
+
+Package page: [com.kynesis.starred](https://openupm.com/packages/com.kynesis.starred/)
+
+**Git URL:** **Window → Package Manager → + → Add package from git URL…**
 
 ```
 https://github.com/landosilva/starred.git
@@ -45,11 +64,11 @@ Requires **Unity 2022.3 LTS** or newer.
 </div>
 
 - Drop in project assets or scene GameObjects.
-- Click to select. Double-click to open or frame.
+- Click to select. Double click to open or frame.
 - Drag out onto Inspector fields.
-- Reorder by drag. Lens icon to ping in Project/Hierarchy.
+- Reorder by drag. Lens icon to ping in Project or Hierarchy.
 
-Scene-bound entries use `scene-path + hierarchy-path`, so they only appear while their scene is loaded. Missing or renamed objects show red.
+Scene entries use a scene path plus hierarchy path, so they only appear while their scene is loaded. Missing or renamed objects show red.
 
 ## Selection History
 
@@ -59,11 +78,11 @@ Scene-bound entries use `scene-path + hierarchy-path`, so they only appear while
 <img src="https://raw.githubusercontent.com/landosilva/starred/gh-pages/images/history.gif" alt="Selection history" width="600" />
 </div>
 
-Auto-populated, most-recent-first. Re-selecting bumps to the top. Each row has a ★ button to promote to Favorites. Size caps at 4 / 8 / 16 / 32.
+Filled automatically, newest first. Selecting an item again moves it to the top. Each row has a ★ button to add it to Favorites. Size caps at 4 / 8 / 16 / 32.
 
 ## Star Overlays
 
-Favorited items get a ★ overlay in the **Project** and **Hierarchy** windows. Click the overlay to unfavorite directly.
+Favorited items get a ★ overlay in the **Project** and **Hierarchy** windows. Click the overlay to unfavorite.
 
 <div align="center">
 <img src="https://raw.githubusercontent.com/landosilva/starred/gh-pages/images/overlays-a.png" alt="Hierarchy overlay" width="380" /> <img src="https://raw.githubusercontent.com/landosilva/starred/gh-pages/images/overlays-b.png" alt="Project overlay" width="380" />
@@ -75,12 +94,12 @@ Both overlays toggle independently in Preferences.
 
 Every row has a context menu:
 
-- 👁 Show in Project / Hierarchy
-- 🗂 Show in Explorer
-- ↗️ Open — opens the asset in its default editor (scene, IDE, prefab stage…)
-- 📷 Frame in Scene View
-- 📋 Copy Path / GUID / Hierarchy Path
-- ❌ Remove from Favorites
+- Show in Project / Hierarchy
+- Show in Explorer
+- Open: opens the asset in its default editor (scene, IDE, prefab stage)
+- Frame in Scene View
+- Copy Path / GUID / Hierarchy Path
+- Remove from Favorites
 
 <div align="center">
 <img src="https://raw.githubusercontent.com/landosilva/starred/gh-pages/images/context-menu.png" alt="Context menu" width="520" />
@@ -95,9 +114,9 @@ Every row has a context menu:
 <img src="https://raw.githubusercontent.com/landosilva/starred/gh-pages/images/preferences.png" alt="Preferences" width="520" />
 </div>
 
-- **Show star in Project window** — toggle Project ★ overlay.
-- **Show star in Hierarchy** — toggle Hierarchy ★ overlay.
-- **Selection history max entries** — 4 / 8 / 16 / 32.
+- **Show star in Project window:** toggle Project ★ overlay.
+- **Show star in Hierarchy:** toggle Hierarchy ★ overlay.
+- **Selection history max entries:** 4 / 8 / 16 / 32.
 
 Also available on each window's ⋮ menu.
 
@@ -105,9 +124,9 @@ Also available on each window's ⋮ menu.
 
 | What | Where | Scope |
 | --- | --- | --- |
-| Favorites | `UserSettings/FavoriteAssets.json` | Per-user, per-project. GUID-based. |
-| History | `UserSettings/SelectionHistory.json` | Per-user, per-project. |
-| Preferences | `EditorPrefs` | Per-user, per-machine. |
+| Favorites | `UserSettings/FavoriteAssets.json` | Per user, per project. GUID based. |
+| History | `UserSettings/SelectionHistory.json` | Per user, per project. |
+| Preferences | `EditorPrefs` | Per user, per machine. |
 
 Nothing touches `Assets/`.
 
@@ -119,7 +138,7 @@ Nothing touches `Assets/`.
 | 2022.3 LTS | ✅ Tested |
 | Older | ❌ Not supported |
 
-Editor-only. No runtime footprint, no dependencies.
+Editor only. No runtime footprint, no dependencies.
 
 ## License
 

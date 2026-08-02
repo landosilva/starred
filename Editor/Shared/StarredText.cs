@@ -41,7 +41,7 @@ namespace Kynesis.Starred.Editor
         public const string Unknown = "(unknown)";
         public const string Empty = "(empty)";
         public const string DeletedSuffix = " (deleted)";
-        public const string DeletedPrefix = "Deleted — ";
+        public const string DeletedPrefix = "Deleted: ";
 
         public const string FavoritesMenuHint = "Tools → Starred → Favorites";
         public const string HistoryMenuHint = "Tools → Starred → History";

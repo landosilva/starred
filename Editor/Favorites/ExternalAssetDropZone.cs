@@ -48,7 +48,7 @@ namespace Kynesis.Starred.Editor
                 if (entry == null || string.IsNullOrEmpty(entry.ScenePath))
                 {
                     if (logWarnings)
-                        StarredLog.Warning($"Can't favorite '{gameObject.name}' — save its scene first.");
+                        StarredLog.Warning($"Can't favorite '{gameObject.name}'. Save its scene first.");
                     continue;
                 }
                 if (string.IsNullOrEmpty(entry.GlobalObjectId)) continue;

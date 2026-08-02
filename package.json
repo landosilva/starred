@@ -2,7 +2,7 @@
   "name": "com.kynesis.starred",
   "version": "0.2.0",
   "displayName": "Starred",
-  "description": "A compact favorites tray plus selection history for the Unity Editor. Star assets and scene objects, jump back to recently-used items, and see at-a-glance which things are starred from the Project window and the Hierarchy.",
+  "description": "A favorites tray and selection history for the Unity Editor. Star assets and scene objects, jump back to recent selections, and see which things are starred in the Project window and Hierarchy.",
   "unity": "2022.3",
   "unityRelease": "0f1",
   "keywords": [
