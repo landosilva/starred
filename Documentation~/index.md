@@ -13,9 +13,20 @@ A favorites tray and selection history for the Unity Editor.
 
 ## Installation
 
-**Unity Asset Store:** [Starred](https://assetstore.unity.com/packages/tools/utilities/starred-376068)
+Requires Unity **2022.3 LTS** or newer.
 
-**OpenUPM (recommended for updates):** Installs through Package Manager so you get **Updates** and version history. A plain git URL install does not.
+### Asset Store
+
+Get [Starred on the Unity Asset Store](https://assetstore.unity.com/packages/tools/utilities/starred-376068), then import from **Window → Package Manager → My Assets**.
+
+### OpenUPM (recommended for updates)
+
+Installs through Package Manager so you get **Updates** and version history. A plain git URL install does not.
+
+<details>
+<summary>Show OpenUPM steps</summary>
+
+<br>
 
 Via [openupm-cli](https://openupm.com/docs/getting-started.html):
 
@@ -33,7 +44,16 @@ Or add the OpenUPM scoped registry, then install `com.kynesis.starred` from Pack
 
 Package page: [com.kynesis.starred](https://openupm.com/packages/com.kynesis.starred/)
 
-**Git URL:** In Unity, open **Window → Package Manager → + → Add package from git URL…** and paste:
+</details>
+
+### Git URL
+
+<details>
+<summary>Show git URL steps</summary>
+
+<br>
+
+In Unity, open **Window → Package Manager → + → Add package from git URL…** and paste:
 
 ```
 https://github.com/landosilva/starred.git
@@ -47,7 +67,9 @@ https://github.com/landosilva/starred.git#v0.2.0
 
 **Local package:** Clone the repo and add it via **Add package from disk…**, pointing at the cloned folder's `package.json`.
 
-Requires Unity **2022.3 LTS** or newer.
+Does not show Package Manager updates. Prefer OpenUPM if you want that.
+
+</details>
 
 ## Favorites window
 
