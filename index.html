@@ -503,7 +503,7 @@
 
     <div class="store-row">
       <a class="store-card" href="https://assetstore.unity.com/packages/tools/utilities/starred-376068" target="_blank" rel="noopener noreferrer">
-        <img src="https://assetstorev1-prd-cdn.unity3d.com/key-image/d3e6281d-6b81-4cef-a04b-3c08fa78fece.webp" alt="Starred on the Unity Asset Store" />
+        <img src="images/asset-store.png" alt="Starred on the Unity Asset Store" />
         <div class="store-label">Unity Asset Store</div>
       </a>
       <a class="store-card" href="https://github.com/landosilva/starred" target="_blank" rel="noopener noreferrer">
@@ -512,10 +512,10 @@
       </a>
     </div>
 
-    <div class="install-card">
+    <div class="install-card" style="border-color: rgba(255, 212, 0, 0.35);">
       <div class="install-step">
-        <h3>OpenUPM · recommended for updates</h3>
-        <p class="install-callout">Installs through Package Manager so you get <strong>Updates</strong> and version history. A plain git URL install does not.</p>
+        <h3>OpenUPM · recommended</h3>
+        <p class="install-callout"><strong>Advantage: updates.</strong> OpenUPM publishes versions to a registry, so Package Manager can show new releases and version history. A git URL install stays pinned until you change the URL.</p>
         <p>Via <a href="https://openupm.com/docs/getting-started.html" target="_blank" rel="noopener noreferrer">openupm-cli</a>:</p>
         <div class="code-row">
           <code id="openupm-cmd">openupm add com.kynesis.starred</code>
@@ -533,11 +533,11 @@
 
     <div class="install-card">
       <div class="install-step">
-        <h3>1 · Open Package Manager</h3>
+        <h3>Git URL</h3>
         <p><span class="menu-path">Window → Package Manager → + → Add package from git URL…</span></p>
       </div>
       <div class="install-step">
-        <h3>2 · Paste the URL</h3>
+        <h3>Paste the URL</h3>
         <div class="code-row">
           <code id="git-url">https://github.com/landosilva/starred.git</code>
           <button class="copy-btn" data-copy="git-url" type="button">Copy</button>
@@ -547,6 +547,14 @@
           <code id="git-url-pin">https://github.com/landosilva/starred.git#v0.2.0</code>
           <button class="copy-btn" data-copy="git-url-pin" type="button">Copy</button>
         </div>
+        <p style="margin-top: 14px; color: var(--muted); font-size: 14px; margin-bottom: 0;">Does not show Package Manager updates. Prefer OpenUPM if you want that.</p>
+      </div>
+    </div>
+
+    <div class="install-card">
+      <div class="install-step">
+        <h3>Asset Store</h3>
+        <p style="margin-bottom: 0;">Get Starred from the <a href="https://assetstore.unity.com/packages/tools/utilities/starred-376068" target="_blank" rel="noopener noreferrer">Unity Asset Store</a>, then import it from <span class="menu-path" style="margin-bottom: 0;">Window → Package Manager → My Assets</span>.</p>
       </div>
     </div>
 
@@ -580,7 +588,7 @@
       <div class="data-row">
         <div>Favorites</div>
         <div><code>UserSettings/FavoriteAssets.json</code></div>
-        <div>Per user, per project. GUID-based.</div>
+        <div>Per user, per project. GUID based.</div>
       </div>
       <div class="data-row">
         <div>History</div>
@@ -601,6 +609,7 @@
     <div>
       <a href="https://github.com/landosilva/starred">GitHub</a> &nbsp;·&nbsp;
       <a href="https://assetstore.unity.com/packages/tools/utilities/starred-376068" target="_blank" rel="noopener noreferrer">Asset Store</a> &nbsp;·&nbsp;
+      <a href="https://openupm.com/packages/com.kynesis.starred/" target="_blank" rel="noopener noreferrer">OpenUPM</a> &nbsp;·&nbsp;
       <a href="https://github.com/landosilva/starred/releases">Releases</a> &nbsp;·&nbsp;
       <a href="https://github.com/landosilva/starred/blob/main/CHANGELOG.md">Changelog</a> &nbsp;·&nbsp;
       <a href="https://github.com/landosilva/starred/blob/main/LICENSE.md">MIT License</a>
