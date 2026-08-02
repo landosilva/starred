@@ -190,41 +190,70 @@
   .overlays { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 28px; }
   .overlays img { width: 100%; display: block; border-radius: var(--radius); border: 1px solid var(--line); }
 
-  .store-row {
+  .platform-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 16px;
     margin-top: 28px;
   }
-  .store-card {
-    display: block;
+  .platform-card {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
     background: var(--panel);
     border: 1px solid var(--line);
     border-radius: var(--radius);
-    overflow: hidden;
-    transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+    padding: 26px 28px;
+    color: var(--text);
+    transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
   }
-  .store-card:hover {
+  .platform-card:hover {
     text-decoration: none;
     background: var(--panel-2);
-    border-color: rgba(255, 212, 0, 0.25);
+    border-color: rgba(255, 212, 0, 0.35);
     transform: translateY(-2px);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
   }
-  .store-card img {
-    width: 100%;
-    height: auto;
-    display: block;
-    object-fit: contain;
-    background: var(--bg-2);
+  .platform-eyebrow {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
   }
-  .store-label {
-    padding: 12px 16px;
+  .platform-brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .platform-logo {
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    color: var(--text);
+  }
+  .platform-name {
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+  }
+  .platform-meta {
+    font-size: 14px;
+    color: var(--muted);
+    line-height: 1.4;
+  }
+  .platform-card:hover .platform-meta { color: var(--text); }
+
+  .install-group {
+    margin: 40px 0 0;
     font-size: 13px;
     font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
     color: var(--muted);
-    border-top: 1px solid var(--line);
   }
-  .store-card:hover .store-label { color: var(--text); }
+  .install-group + .install-card { margin-top: 14px; }
 
   .install-card {
     background: var(--panel);
@@ -365,7 +394,7 @@
     .data-row { grid-template-columns: 1fr; gap: 4px; padding: 14px 16px; }
     .data-row.head { display: none; }
     section { padding: 56px 0; }
-    .store-row { grid-template-columns: 1fr; }
+    .platform-row { grid-template-columns: 1fr; }
   }
 </style>
 </head>
@@ -501,16 +530,31 @@
     <h2>Get it into your project.</h2>
     <p class="lede">Requires Unity 2022.3 LTS or newer. Editor only. No runtime footprint, no dependencies.</p>
 
-    <div class="store-row">
-      <a class="store-card" href="https://assetstore.unity.com/packages/tools/utilities/starred-376068" target="_blank" rel="noopener noreferrer">
-        <img src="images/asset-store.png" alt="Starred on the Unity Asset Store" />
-        <div class="store-label">Unity Asset Store</div>
+    <div class="platform-row">
+      <a class="platform-card" href="https://assetstore.unity.com/packages/tools/utilities/starred-376068" target="_blank" rel="noopener noreferrer">
+        <span class="platform-eyebrow">Available on</span>
+        <span class="platform-brand">
+          <svg class="platform-logo" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor">
+            <path d="M12 2L2 7.5v9L12 22l10-5.5v-9L12 2zm0 2.4l7.6 4.18v8.84L12 19.6l-7.6-4.18V8.58L12 4.4z"/>
+            <path d="M12 4.4v15.2M4.4 8.58l7.6 4.18 7.6-4.18" fill="none" stroke="currentColor" stroke-width="0.75" opacity="0.45"/>
+          </svg>
+          <span class="platform-name">Unity Asset Store</span>
+        </span>
+        <span class="platform-meta">Get Starred · free</span>
       </a>
-      <a class="store-card" href="https://github.com/landosilva/starred" target="_blank" rel="noopener noreferrer">
-        <img src="images/social.png" alt="Starred on GitHub" />
-        <div class="store-label">GitHub</div>
+      <a class="platform-card" href="https://github.com/landosilva/starred" target="_blank" rel="noopener noreferrer">
+        <span class="platform-eyebrow">Available on</span>
+        <span class="platform-brand">
+          <svg class="platform-logo" viewBox="0 0 16 16" aria-hidden="true" fill="currentColor">
+            <path d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27-.01-1.02-.01-2-3 .65-3.65-1.35-3.65-1.35-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33.85 0 1.71.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.68.92.68 1.85 0 1.34-.01 2.41-.01 2.74 0 .21.15.46.55.38A8.012 8.012 0 0 1 16 8c0-4.42-3.58-8-8-8z"/>
+          </svg>
+          <span class="platform-name">GitHub</span>
+        </span>
+        <span class="platform-meta">landosilva/starred</span>
       </a>
     </div>
+
+    <p class="install-group">Package Manager</p>
 
     <div class="install-card" style="border-color: rgba(255, 212, 0, 0.35);">
       <div class="install-step">
@@ -548,13 +592,6 @@
           <button class="copy-btn" data-copy="git-url-pin" type="button">Copy</button>
         </div>
         <p style="margin-top: 14px; color: var(--muted); font-size: 14px; margin-bottom: 0;">Does not show Package Manager updates. Prefer OpenUPM if you want that.</p>
-      </div>
-    </div>
-
-    <div class="install-card">
-      <div class="install-step">
-        <h3>Asset Store</h3>
-        <p style="margin-bottom: 0;">Get Starred from the <a href="https://assetstore.unity.com/packages/tools/utilities/starred-376068" target="_blank" rel="noopener noreferrer">Unity Asset Store</a>, then import it from <span class="menu-path" style="margin-bottom: 0;">Window → Package Manager → My Assets</span>.</p>
       </div>
     </div>
 
