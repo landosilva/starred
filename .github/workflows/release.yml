@@ -1,0 +1,65 @@
+name: Sign and release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  sign:
+    name: Sign UPM package
+    runs-on: ubuntu-latest
+    env:
+      UPM_SERVICE_ACCOUNT_KEY_ID: ${{ secrets.UPM_SERVICE_ACCOUNT_KEY_ID }}
+      UPM_SERVICE_ACCOUNT_KEY_SECRET: ${{ secrets.UPM_SERVICE_ACCOUNT_KEY_SECRET }}
+      UPM_ORG_ID: ${{ secrets.UPM_ORG_ID }}
+      STAGING_DIRECTORY: /tmp/starred-package
+      DISTRIBUTION_DIRECTORY: /tmp/starred-distribution
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Verify tag matches package version
+        run: |
+          package_version="$(jq -r '.version' package.json)"
+          if [ "v$package_version" != "$GITHUB_REF_NAME" ]; then
+            printf 'Tag %s does not match package.json version %s\n' "$GITHUB_REF_NAME" "$package_version" >&2
+            exit 1
+          fi
+
+      - name: Stage package contents
+        run: |
+          mkdir -p "$STAGING_DIRECTORY"
+          git archive HEAD | tar -x -C "$STAGING_DIRECTORY"
+          rm -rf "$STAGING_DIRECTORY/.github"
+
+      - name: Install Unity UPM CLI
+        run: |
+          curl -fsSL https://cdn.packages.unity.com/upm-cli/install.sh -o install.sh
+          bash install.sh
+          echo "$HOME/.upm/bin" >> "$GITHUB_PATH"
+
+      - name: Sign package
+        run: |
+          mkdir -p "$DISTRIBUTION_DIRECTORY"
+          upm pack "$STAGING_DIRECTORY" --organization-id "$UPM_ORG_ID" --destination "$DISTRIBUTION_DIRECTORY"
+
+      - name: Verify signed archive
+        run: |
+          shopt -s nullglob
+          archives=("$DISTRIBUTION_DIRECTORY"/*.tgz)
+          if [ "${#archives[@]}" -ne 1 ]; then
+            printf 'Expected exactly one signed archive, found %s\n' "${#archives[@]}" >&2
+            exit 1
+          fi
+          tar -tzf "${archives[0]}" | grep -qx 'package/package.json'
+          tar -tzf "${archives[0]}" | grep -qx 'package/.attestation.p7m'
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: /tmp/starred-distribution/*.tgz
