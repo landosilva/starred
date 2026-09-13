@@ -5,6 +5,14 @@ All notable changes to this package are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2026-09-13
+
+### Changed
+
+- **Package is now signed.** Releases are signed with Unity's Package Manager, so Unity 6.3 and newer no longer show a missing signature warning when installing from OpenUPM.
+- Added `unityRelease` to the package manifest for Asset Store validation.
+- README and documentation now cover OpenUPM and Asset Store installation.
+
 ## [0.2.0] - 2026-08-02
 
 ### Added
