@@ -76,6 +76,9 @@ namespace Kynesis.Starred.Editor
 
         public static VisualElement CreateSceneObjectRow(FavoriteEntry entry, out GameObject gameObject)
         {
+            gameObject = null;
+            if (!SceneObjectResolver.IsSceneAvailable(entry.ScenePath)) return null;
+
             gameObject = SceneObjectResolver.Find(entry);
             if (gameObject != null) EntryDisplayName.Capture(entry);
 
