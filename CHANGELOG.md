@@ -5,6 +5,12 @@ All notable changes to this package are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.2] - 2026-09-16
+
+### Fixed
+
+- Favorites and History no longer show scene objects as deleted when their scene or prefab is not open. Those rows are hidden again until the scene or prefab is opened.
+
 ## [0.2.1] - 2026-09-13
 
 ### Changed

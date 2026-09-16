@@ -66,7 +66,7 @@ https://github.com/landosilva/starred.git
 Pin to a release:
 
 ```
-https://github.com/landosilva/starred.git#v0.2.1
+https://github.com/landosilva/starred.git#v0.2.2
 ```
 
 Or clone and use **Add package from disk…** → `package.json`.
