@@ -60,7 +60,7 @@ https://github.com/landosilva/starred.git
 Pin to a release:
 
 ```
-https://github.com/landosilva/starred.git#v0.2.2
+https://github.com/landosilva/starred.git#v0.2.3
 ```
 
 **Local package:** Clone the repo and add it via **Add package from disk…**, pointing at the cloned folder's `package.json`.
