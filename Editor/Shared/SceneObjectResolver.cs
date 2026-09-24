@@ -11,12 +11,17 @@ namespace Kynesis.Starred.Editor
         public static GameObject Find(FavoriteEntry entry)
         {
             if (entry == null || !entry.IsSceneObject) return null;
-            if (!IsSceneAvailable(entry.ScenePath)) return null;
 
-            GameObject viaId = TryResolveByGlobalId(entry);
-            if (viaId != null) return viaId;
+            Scene scene = FindLoadedScene(entry.ScenePath);
+            if (!scene.IsValid() || !scene.isLoaded) return null;
 
-            return TryResolveByHierarchyWalk(entry);
+            GameObject atHierarchyPath = FindInScene(scene, entry.HierarchyPath);
+            if (!GlobalObjectId.TryParse(entry.GlobalObjectId, out GlobalObjectId target)) return atHierarchyPath;
+            if (atHierarchyPath != null && GlobalObjectId.GetGlobalObjectIdSlow(atHierarchyPath).Equals(target))
+                return atHierarchyPath;
+
+            GameObject byGlobalObjectId = FindByGlobalObjectId(scene, target);
+            return byGlobalObjectId != null ? byGlobalObjectId : atHierarchyPath;
         }
 
         public static bool IsSceneAvailable(string scenePath)
@@ -51,16 +56,22 @@ namespace Kynesis.Starred.Editor
                 GetHierarchyPath(gameObject));
         }
 
-        private static GameObject TryResolveByGlobalId(FavoriteEntry entry)
+        private static GameObject FindByGlobalObjectId(Scene scene, GlobalObjectId target)
         {
-            if (!GlobalObjectId.TryParse(entry.GlobalObjectId, out GlobalObjectId id)) return null;
-            return GlobalObjectId.GlobalObjectIdentifierToObjectSlow(id) as GameObject;
-        }
+            List<GameObject> gameObjects = new List<GameObject>();
+            foreach (GameObject root in scene.GetRootGameObjects())
+            {
+                foreach (Transform transform in root.GetComponentsInChildren<Transform>(true))
+                    gameObjects.Add(transform.gameObject);
+            }
 
-        private static GameObject TryResolveByHierarchyWalk(FavoriteEntry entry)
-        {
-            Scene scene = FindLoadedScene(entry.ScenePath);
-            return scene.IsValid() && scene.isLoaded ? FindInScene(scene, entry.HierarchyPath) : null;
+            GlobalObjectId[] identifiers = new GlobalObjectId[gameObjects.Count];
+            GlobalObjectId.GetGlobalObjectIdsSlow(gameObjects.ToArray(), identifiers);
+            for (int i = 0; i < identifiers.Length; i++)
+            {
+                if (identifiers[i].Equals(target)) return gameObjects[i];
+            }
+            return null;
         }
 
         private static Scene FindLoadedScene(string scenePath)
