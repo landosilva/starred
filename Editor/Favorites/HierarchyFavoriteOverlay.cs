@@ -8,7 +8,7 @@ namespace Kynesis.Starred.Editor
     {
         static HierarchyFavoriteOverlay()
         {
-#if UNITY_6000_0_OR_NEWER
+#if UNITY_6000_4_OR_NEWER
             EditorApplication.hierarchyWindowItemByEntityIdOnGUI -= OnItemGUI;
             EditorApplication.hierarchyWindowItemByEntityIdOnGUI += OnItemGUI;
 #else
@@ -20,7 +20,7 @@ namespace Kynesis.Starred.Editor
             FavoriteAssetsStore.Changed += EditorApplication.RepaintHierarchyWindow;
         }
 
-#if UNITY_6000_0_OR_NEWER
+#if UNITY_6000_4_OR_NEWER
         private static void OnItemGUI(EntityId entityId, Rect selectionRect)
             => DrawOverlay(EditorUtility.EntityIdToObject(entityId), selectionRect);
 #else
